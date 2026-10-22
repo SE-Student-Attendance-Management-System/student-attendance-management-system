@@ -146,7 +146,7 @@ Test results must be recorded after execution. Keep actual results and pass/fail
 - Python installed and available in PowerShell.
 - PostgreSQL installed and running.
 - Git installed.
-- The project repository cloned locally.
+- The repository cloned locally.
 
 ### 1. Open the project directory
 
@@ -174,28 +174,60 @@ python -m pip install -r requirements.txt
 
 ### 4. Configure environment variables
 
-Create a local `.env` file in the project root. Configure the database settings expected by `config/settings.py`, including the database name, database user, password, host, and port.
+Create a local `.env` file by copying the example:
 
-Create the PostgreSQL database and ensure the configured database user has the required permissions.
+```powershell
+Copy-Item .env.example .env
+```
 
-**Security:** Never commit `.env` or store database passwords in source-controlled files. Use `.env.example` only for placeholder values.
+Open `.env`:
 
-### 5. Apply database migrations
+```powershell
+notepad .env
+```
 
-Ensure PostgreSQL is running and the `.env` settings are correct, then execute:
+Set the values for your local environment:
+
+```env
+DJANGO_SECRET_KEY=replace-with-your-own-secret-key
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+
+DB_NAME=student_attendance
+DB_USER=postgres
+DB_PASSWORD=replace-with-your-postgres-password
+DB_HOST=127.0.0.1
+DB_PORT=5432
+```
+
+Replace the placeholder values with your actual local configuration. Keep passwords and secret keys private.
+
+### 5. Create the PostgreSQL database
+
+Connect to PostgreSQL using an account with permission to create databases:
+
+```sql
+CREATE DATABASE student_attendance;
+```
+
+If the database already exists, do not create it again. Ensure the database user configured in `.env` has the necessary permissions.
+
+### 6. Apply database migrations
+
+Ensure PostgreSQL is running and `.env` contains the correct connection details, then run:
 
 ```powershell
 python manage.py migrate
 ```
 
-### 6. Run configuration checks
+### 7. Check the configuration
 
 ```powershell
 python manage.py check
 python manage.py migrate --check
 ```
 
-### 7. Start the development server
+### 8. Start the development server
 
 ```powershell
 python manage.py runserver
@@ -203,16 +235,17 @@ python manage.py runserver
 
 Open `http://127.0.0.1:8000/` in your browser.
 
-Stop the development server with `Ctrl+C`.
+Stop the server with `Ctrl+C`.
 
-### 8. Run tests
+### 9. Run tests
 
 ```powershell
 python manage.py test attendance
 ```
 
-Use the team's approved technology decision and actual local environment configuration when setting up another development machine.
+Use the team's formally approved technology decision and the actual local environment configuration when setting up another development machine.
 
+**Security:** Never commit `.env` or store real database passwords or production secret keys in source-controlled files. Commit `.env.example` with placeholder values only.
 
 ## Team
 
