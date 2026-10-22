@@ -88,9 +88,17 @@ These requirements must be verified through tests and measured results; they sho
 
 ## Technology stack
 
-The SRS allows Python with Django/Flask or Java with Spring Boot, and requires persistent database storage. SAD v1.2 leaves the specific framework and DBMS to be finalized.
+## Technology stack
 
-The team should review and approve the proposed stack recorded in [`docs/technology-stack-and-git-workflow.md`](docs/technology-stack-and-git-workflow.md) before implementation. Do not treat an option in that document as selected until the team's final approval record is completed.
+The current local implementation uses:
+
+- **Language:** Python
+- **Web framework:** Django
+- **Database:** PostgreSQL
+- **Dependency management:** pip and a Python virtual environment
+
+These are the technologies currently used by the implementation.
+Refer to `docs/technology-stack-and-git-workflow.md` for the team's formal technology decision.
 
 ## Repository documents
 
@@ -132,7 +140,80 @@ Test results must be recorded after execution. Keep actual results and pass/fail
 
 ## Setup
 
-The final stack and runtime versions are still to be confirmed by the team. Once approved, this section should be updated with accurate installation instructions, required environment variables, database creation/migration steps, test commands, and run commands. Do not put passwords, API keys, or other secrets into this repository.
+## Setup
+
+### Prerequisites
+
+- Python installed and available in PowerShell.
+- PostgreSQL installed and running.
+- Git installed.
+- The project repository cloned locally.
+
+### 1. Open the project directory
+
+Open PowerShell in the project root directory.
+
+### 2. Create and activate a virtual environment
+
+If the virtual environment does not already exist:
+
+```powershell
+python -m venv .venv
+```
+
+Activate it:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+### 3. Install dependencies
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+### 4. Configure environment variables
+
+Create a local `.env` file in the project root. Configure the database settings expected by `config/settings.py`, including the database name, database user, password, host, and port.
+
+Create the PostgreSQL database and ensure the configured database user has the required permissions.
+
+**Security:** Never commit `.env` or store database passwords in source-controlled files. Use `.env.example` only for placeholder values.
+
+### 5. Apply database migrations
+
+Ensure PostgreSQL is running and the `.env` settings are correct, then execute:
+
+```powershell
+python manage.py migrate
+```
+
+### 6. Run configuration checks
+
+```powershell
+python manage.py check
+python manage.py migrate --check
+```
+
+### 7. Start the development server
+
+```powershell
+python manage.py runserver
+```
+
+Open `http://127.0.0.1:8000/` in your browser.
+
+Stop the development server with `Ctrl+C`.
+
+### 8. Run tests
+
+```powershell
+python manage.py test attendance
+```
+
+Use the team's approved technology decision and actual local environment configuration when setting up another development machine.
+
 
 ## Team
 
