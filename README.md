@@ -86,7 +86,6 @@ Implementation and verification should address the following requirements from S
 
 These requirements must be verified through tests and measured results; they should not be reported as satisfied before execution.
 
-## Technology stack
 
 ## Technology stack
 
@@ -138,7 +137,7 @@ Test planning is based on Test Plan v1.1. Testing covers unit, integration, and 
 
 Test results must be recorded after execution. Keep actual results and pass/fail statuses blank until a test has been run.
 
-## Setup
+
 
 ## Setup
 
