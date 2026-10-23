@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - SAMS{% endblock %}
+
+{% block content %}
+<div class="card auth-card">
+    <div class="auth-header">
+        <h1>Sign In</h1>
+        <p>Access the Student Attendance Management System</p>
+    </div>
+
+    {% if form.errors %}
+        <div class="alert alert-danger" role="alert" id="login-error-alert">
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <p style="margin: 0;">{{ error }}</p>
+                {% endfor %}
+            {% else %}
+                <p style="margin: 0;">Please correct the errors below.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}" novalidate id="login-form">
+        {% csrf_token %}
+
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <div class="form-group">
+            <label for="id_username" class="form-label">Username</label>
+            <input
+                type="text"
+                name="username"
+                id="id_username"
+                class="form-control"
+                value="{{ form.username.value|default:'' }}"
+                autocomplete="username"
+                required
+                autofocus
+            >
+            {% if form.username.errors %}
+                <small style="color: var(--danger-text);">{{ form.username.errors.0 }}</small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_password" class="form-label">Password</label>
+            <input
+                type="password"
+                name="password"
+                id="id_password"
+                class="form-control"
+                autocomplete="current-password"
+                required
+            >
+            {% if form.password.errors %}
+                <small style="color: var(--danger-text);">{{ form.password.errors.0 }}</small>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="login-submit">
+            Sign In
+        </button>
+    </form>
+</div>
+{% endblock %}

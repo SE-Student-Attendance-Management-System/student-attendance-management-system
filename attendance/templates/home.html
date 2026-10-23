@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SAMS{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="home-welcome">
+        <h1>Welcome, {{ user.username }}</h1>
+        <p>Authenticated Session Established &bull; Role: <strong>{{ user.get_role_display|default:user.role }}</strong></p>
+    </div>
+
+    <div class="info-banner">
+        <h3>Sprint Backlog Notice</h3>
+        <p>
+            You are successfully authenticated under <strong>Issue #11</strong> (Login, Logout, and Session Handling).
+            Role-specific dashboards and access control policies for Administrator, Faculty, and Student roles will be integrated in <strong>Issue #12</strong>.
+        </p>
+    </div>
+
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
+        <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary" id="home-logout-btn">
+                Log Out
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
