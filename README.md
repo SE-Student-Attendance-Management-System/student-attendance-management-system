@@ -2,7 +2,7 @@
 
 A web-based application to manage student information, courses/classes, attendance, attendance calculations, reports, and role-specific dashboards for Administrators, Faculty, and Students.
 
-> **Project status:** Requirements and design documents are available. The exact implementation stack must be confirmed by the team and recorded in [`docs/technology-stack-and-git-workflow.md`](docs/technology-stack-and-git-workflow.md).
+ **Project status:** **Project status:** The team has selected Python, Django, and PostgreSQL for the implementation. The application setup and core data models are being developed using this stack. Refer to `docs/technology-stack-and-git-workflow.md` for the team's recorded technology decision and Git workflow.
 
 ## Project goals
 
@@ -86,11 +86,18 @@ Implementation and verification should address the following requirements from S
 
 These requirements must be verified through tests and measured results; they should not be reported as satisfied before execution.
 
+
 ## Technology stack
 
-The SRS allows Python with Django/Flask or Java with Spring Boot, and requires persistent database storage. SAD v1.2 leaves the specific framework and DBMS to be finalized.
+The current local implementation uses:
 
-The team should review and approve the proposed stack recorded in [`docs/technology-stack-and-git-workflow.md`](docs/technology-stack-and-git-workflow.md) before implementation. Do not treat an option in that document as selected until the team's final approval record is completed.
+- **Language:** Python
+- **Web framework:** Django
+- **Database:** PostgreSQL
+- **Dependency management:** pip and a Python virtual environment
+
+These are the technologies currently used by the implementation.
+Refer to `docs/technology-stack-and-git-workflow.md` for the team's formal technology decision.
 
 ## Repository documents
 
@@ -130,9 +137,115 @@ Test planning is based on Test Plan v1.1. Testing covers unit, integration, and 
 
 Test results must be recorded after execution. Keep actual results and pass/fail statuses blank until a test has been run.
 
+
+
 ## Setup
 
-The final stack and runtime versions are still to be confirmed by the team. Once approved, this section should be updated with accurate installation instructions, required environment variables, database creation/migration steps, test commands, and run commands. Do not put passwords, API keys, or other secrets into this repository.
+### Prerequisites
+
+- Python installed and available in PowerShell.
+- PostgreSQL installed and running.
+- Git installed.
+- The repository cloned locally.
+
+### 1. Open the project directory
+
+Open PowerShell in the project root directory.
+
+### 2. Create and activate a virtual environment
+
+If the virtual environment does not already exist:
+
+```powershell
+python -m venv .venv
+```
+
+Activate it:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+### 3. Install dependencies
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+### 4. Configure environment variables
+
+Create a local `.env` file by copying the example:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Open `.env`:
+
+```powershell
+notepad .env
+```
+
+Set the values for your local environment:
+
+```env
+DJANGO_SECRET_KEY=replace-with-your-own-secret-key
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+
+DB_NAME=student_attendance
+DB_USER=postgres
+DB_PASSWORD=replace-with-your-postgres-password
+DB_HOST=127.0.0.1
+DB_PORT=5433
+```
+
+Replace the placeholder values with your actual local configuration. Keep passwords and secret keys private.
+
+### 5. Create the PostgreSQL database
+
+Connect to PostgreSQL using an account with permission to create databases:
+
+```sql
+CREATE DATABASE student_attendance;
+```
+
+If the database already exists, do not create it again. Ensure the database user configured in `.env` has the necessary permissions.
+
+### 6. Apply database migrations
+
+Ensure PostgreSQL is running and `.env` contains the correct connection details, then run:
+
+```powershell
+python manage.py migrate
+```
+
+### 7. Check the configuration
+
+```powershell
+python manage.py check
+python manage.py migrate --check
+```
+
+### 8. Start the development server
+
+```powershell
+python manage.py runserver
+```
+
+Open `http://127.0.0.1:8000/` in your browser.
+
+Stop the server with `Ctrl+C`.
+
+### 9. Run tests
+
+```powershell
+python manage.py test attendance
+```
+
+Use the team's formally approved technology decision and the actual local environment configuration when setting up another development machine.
+
+**Security:** Never commit `.env` or store real database passwords or production secret keys in source-controlled files. Commit `.env.example` with placeholder values only.
 
 ## Team
 
