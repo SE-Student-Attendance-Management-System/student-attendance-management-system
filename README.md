@@ -2,7 +2,7 @@
 
 A web-based application to manage student information, courses/classes, attendance, attendance calculations, reports, and role-specific dashboards for Administrators, Faculty, and Students.
 
-> **Project status:** Requirements and design documents are available. The exact implementation stack must be confirmed by the team and recorded in [`docs/technology-stack-and-git-workflow.md`](docs/technology-stack-and-git-workflow.md).
+ **Project status:** **Project status:** The team has selected Python, Django, and PostgreSQL for the implementation. The application setup and core data models are being developed using this stack. Refer to `docs/technology-stack-and-git-workflow.md` for the team's recorded technology decision and Git workflow.
 
 ## Project goals
 
@@ -197,7 +197,7 @@ DB_NAME=student_attendance
 DB_USER=postgres
 DB_PASSWORD=replace-with-your-postgres-password
 DB_HOST=127.0.0.1
-DB_PORT=5432
+DB_PORT=5433
 ```
 
 Replace the placeholder values with your actual local configuration. Keep passwords and secret keys private.
