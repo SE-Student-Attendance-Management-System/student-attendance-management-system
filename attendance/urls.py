@@ -1,9 +1,23 @@
-
+from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
 
 urlpatterns = [
+    # Authentication & Landing Routes (Issue #11 / PR #27)
+    path(
+        "login/",
+        auth_views.LoginView.as_view(template_name="registration/login.html"),
+        name="login",
+    ),
+    path(
+        "logout/",
+        auth_views.LogoutView.as_view(),
+        name="logout",
+    ),
+    path("", views.home, name="home"),
+
+    # Course & Class Section Management Routes (Issue #20 / PR #26)
     path("courses/", views.course_list, name="course_list"),
     path("courses/create/", views.course_create, name="course_create"),
     path("courses/<int:pk>/edit/", views.course_update, name="course_update"),
