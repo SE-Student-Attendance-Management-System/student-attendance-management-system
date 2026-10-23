@@ -140,3 +140,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom user model.
 AUTH_USER_MODEL = "attendance.User"
+LOGIN_URL = "/admin/login/"
+LOGIN_REDIRECT_URL = "/courses/"
+LOGOUT_REDIRECT_URL = "/admin/login/"

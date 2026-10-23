@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses</title>
+</head>
+<body>
+    <h1>Course Management</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p><a href="{% url 'course_create' %}">Create New Course</a></p>
+
+    {% if courses %}
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Course ID</th>
+                    <th>Course Name</th>
+                    <th>Semester</th>
+                    <th>Faculty</th>
+                    <th>Section</th>
+                    <th>Academic Term</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                    {% for section in course.class_sections.all %}
+                        <tr>
+                            <td>{{ course.course_code }}</td>
+                            <td>{{ course.course_name }}</td>
+                            <td>{{ course.semester }}</td>
+                            <td>{{ section.faculty.name }}</td>
+                            <td>{{ section.section }}</td>
+                            <td>{{ section.academic_term }}</td>
+                            <td>
+                                <a href="{% url 'section_update' course.pk section.pk %}">Edit</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No courses have been created yet.</p>
+    {% endif %}
+</body>
+</html>
