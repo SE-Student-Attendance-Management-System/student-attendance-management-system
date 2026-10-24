@@ -9,13 +9,47 @@
         <p>Authenticated Session Established &bull; Role: <strong>{{ user.get_role_display|default:user.role }}</strong></p>
     </div>
 
-    <div class="info-banner">
-        <h3>Sprint Backlog Notice</h3>
-        <p>
-            You are successfully authenticated under <strong>Issue #11</strong> (Login, Logout, and Session Handling).
-            Role-specific dashboards and access control policies for Administrator, Faculty, and Student roles will be integrated in <strong>Issue #12</strong>.
-        </p>
+    {% if is_admin %}
+    <div class="info-banner" style="border-left-color: #2563eb;">
+        <h3>Administrator Dashboard</h3>
+        <p>You have system-level management privileges under <strong>Issue #12 (Role-Based Authorization)</strong> and <strong>BR-02</strong>.</p>
+        <div style="margin-top: 1rem;">
+            <a href="{% url 'course_list' %}" class="btn btn-primary" id="admin-courses-btn" style="text-decoration: none;">
+                Manage Courses &amp; Class Sections
+            </a>
+        </div>
     </div>
+    {% elif is_faculty %}
+    <div class="info-banner" style="border-left-color: #059669;">
+        <h3>Faculty Dashboard</h3>
+        <p>You have access to mark and modify attendance for your assigned classes under <strong>BR-03</strong> and <strong>BR-05</strong>.</p>
+        {% if faculty_sections %}
+        <h4 style="margin-top: 1rem;">Your Assigned Class Sections:</h4>
+        <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+            {% for section in faculty_sections %}
+            <li><strong>{{ section.course.course_code }}</strong> - {{ section.course.course_name }} (Section {{ section.section }}, {{ section.academic_term }})</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="margin-top: 0.5rem; color: #64748b;">No class sections currently assigned to your profile.</p>
+        {% endif %}
+    </div>
+    {% elif is_student %}
+    <div class="info-banner" style="border-left-color: #d97706;">
+        <h3>Student Dashboard</h3>
+        <p>You have read-only access to your personal attendance records and attendance history under <strong>BR-04</strong>.</p>
+        {% if student_enrollments %}
+        <h4 style="margin-top: 1rem;">Your Enrolled Class Sections:</h4>
+        <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+            {% for enrollment in student_enrollments %}
+            <li><strong>{{ enrollment.class_section.course.course_code }}</strong> - {{ enrollment.class_section.course.course_name }} (Section {{ enrollment.class_section.section }}, Faculty: {{ enrollment.class_section.faculty.name }})</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="margin-top: 0.5rem; color: #64748b;">No course enrollments currently recorded for your profile.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
         <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
