@@ -18,6 +18,15 @@ def mark_attendance(*, session_id, student_id, status, marked_by):
     if status not in AttendanceRecord.Status.values:
         raise ValidationError("Invalid attendance status.")
 
+    if (
+        not marked_by
+        or not getattr(marked_by, "is_authenticated", False)
+        or not hasattr(marked_by, "role")
+    ):
+        raise PermissionDenied(
+            "Only an administrator or the assigned faculty can mark attendance."
+        )
+
     session = AttendanceSession.objects.select_for_update().get(
         pk=session_id
     )
@@ -26,7 +35,7 @@ def mark_attendance(*, session_id, student_id, status, marked_by):
 
     if (
         marked_by.role != "ADMIN"
-        and assigned_faculty_user_id != marked_by.pk
+        and assigned_faculty_user_id != getattr(marked_by, "pk", None)
     ):
         raise PermissionDenied(
             "Only an administrator or the assigned faculty can mark attendance."
@@ -57,9 +66,28 @@ def update_attendance(*, attendance_id, status, changed_by):
     if status not in AttendanceRecord.Status.values:
         raise ValidationError("Invalid attendance status.")
 
+    if (
+        not changed_by
+        or not getattr(changed_by, "is_authenticated", False)
+        or not hasattr(changed_by, "role")
+    ):
+        raise PermissionDenied(
+            "Only an administrator or the assigned faculty can modify attendance records."
+        )
+
     record = AttendanceRecord.objects.select_for_update().get(
         pk=attendance_id
     )
+
+    assigned_faculty_user_id = record.session.class_section.faculty.user_id
+
+    if (
+        changed_by.role != "ADMIN"
+        and assigned_faculty_user_id != getattr(changed_by, "pk", None)
+    ):
+        raise PermissionDenied(
+            "Only an administrator or the assigned faculty can modify attendance records."
+        )
 
     if record.status == status:
         return record

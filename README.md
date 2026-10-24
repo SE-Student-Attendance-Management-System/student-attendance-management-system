@@ -20,7 +20,11 @@ A web-based application to manage student information, courses/classes, attendan
 | **Faculty** | View assigned classes, mark attendance, manage attendance records as permitted, and access relevant reports. |
 | **Student** | View their own attendance records, history, percentage, and relevant summaries. |
 
-Access to functions must be enforced server-side according to the approved SRS and business rules.
+Access to functions is enforced server-side according to the approved SRS (REQ-02) and business rules (BR-01 to BR-05):
+- **Unauthenticated requests** to protected routes are redirected (HTTP 302) to the login interface with the original target saved in `?next=`.
+- **Authenticated users without permission** receive an immediate **HTTP 403 Forbidden** response.
+- **Service-level authorization** restricts attendance marking (BR-03) and modification (BR-05) to Administrators and the specific assigned Faculty member.
+
 
 ## Functional scope and requirements
 

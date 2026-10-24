@@ -1,4 +1,4 @@
-﻿from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from .models import Course, ClassSection, Faculty
@@ -152,14 +152,31 @@ class CourseManagementViewTests(TestCase):
         self.assertEqual(self.section.academic_term, "2027-28")
 
     def test_non_admin_cannot_manage_courses(self):
+        # 1. Unauthenticated requests must redirect to login (HTTP 302)
         self.client.logout()
+        unauth_response = self.client.get("/courses/")
+        self.assertEqual(unauth_response.status_code, 302)
+        self.assertIn("/login/", unauth_response.headers.get("Location", ""))
 
+        # 2. Authenticated Student must receive HTTP 403 Forbidden
         student = User.objects.create_user(
             username="course_student",
             password="test-password-123",
             role=User.Role.STUDENT,
         )
         self.client.force_login(student)
-
         response = self.client.get("/courses/")
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
+
+        post_response = self.client.post("/courses/create/", {"course_code": "CS999"})
+        self.assertEqual(post_response.status_code, 403)
+
+        # 3. Authenticated Faculty must also receive HTTP 403 Forbidden
+        faculty_user = User.objects.create_user(
+            username="course_faculty_user",
+            password="test-password-123",
+            role=User.Role.FACULTY,
+        )
+        self.client.force_login(faculty_user)
+        fac_response = self.client.get("/courses/")
+        self.assertEqual(fac_response.status_code, 403)
