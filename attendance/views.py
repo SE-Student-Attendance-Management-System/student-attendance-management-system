@@ -1,37 +1,53 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CourseForm, ClassSectionForm
 from .models import Course, ClassSection
+from .permissions import admin_required, can_manage_courses
 
 
 # ==============================================================================
-# Authentication & Landing Views (Issue #11 / PR #27)
+# Authentication & Landing Views (Issue #11 / Issue #12)
 # ==============================================================================
 
 @login_required
 def home(request):
     """
-    Authenticated landing view (Issue #11).
-    Displays the authenticated user's details and session actions.
-    Role-specific dashboards will be introduced in Issue #12.
+    Authenticated landing and role-based dashboard view (Issue #11 & Issue #12).
+    Displays the authenticated user's details, role status, and permitted operations
+    according to their role (Administrator, Faculty, Student).
     """
-    return render(request, "home.html", {"user": request.user})
+    user = request.user
+    context = {
+        "user": user,
+        "is_admin": user.role == "ADMIN",
+        "is_faculty": user.role == "FACULTY",
+        "is_student": user.role == "STUDENT",
+    }
+
+    if user.role == "FACULTY" and hasattr(user, "faculty_profile") and user.faculty_profile:
+        context["faculty_sections"] = (
+            user.faculty_profile.class_sections.select_related("course").order_by(
+                "course__course_code"
+            )
+        )
+    elif user.role == "STUDENT" and hasattr(user, "student_profile") and user.student_profile:
+        context["student_enrollments"] = (
+            user.student_profile.enrollments.select_related(
+                "class_section__course", "class_section__faculty"
+            ).order_by("class_section__course__course_code")
+        )
+
+    return render(request, "home.html", context)
 
 
 # ==============================================================================
-# Course Management Views (Issue #20 / PR #26)
+# Course Management Views (Issue #20 / PR #26 / Issue #12)
 # ==============================================================================
 
-def can_manage_courses(user):
-    """Access control check: only authenticated administrators can manage courses."""
-    return user.is_authenticated and user.role == "ADMIN"
-
-
-@login_required
-@user_passes_test(can_manage_courses)
+@admin_required
 def course_list(request):
     courses = Course.objects.prefetch_related(
         "class_sections__faculty"
@@ -44,8 +60,7 @@ def course_list(request):
     )
 
 
-@login_required
-@user_passes_test(can_manage_courses)
+@admin_required
 @transaction.atomic
 def course_create(request):
     if request.method == "POST":
@@ -77,8 +92,7 @@ def course_create(request):
     )
 
 
-@login_required
-@user_passes_test(can_manage_courses)
+@admin_required
 @transaction.atomic
 def course_update(request, pk):
     """Edit course details and its section when there is only one."""
@@ -130,8 +144,7 @@ def course_update(request, pk):
     )
 
 
-@login_required
-@user_passes_test(can_manage_courses)
+@admin_required
 @transaction.atomic
 def section_update(request, pk, section_pk):
     """Edit a course and the specific section selected by the user."""
