@@ -420,3 +420,49 @@ class AuthenticationTests(TestCase):
             3.0,
             f"Login page load took {elapsed_seconds:.4f}s, exceeding 3.0s threshold",
         )
+
+    def test_login_with_inactive_user_is_rejected(self):
+        """
+        [AC-2 / REQ-01] Inactive accounts must be rejected during authentication.
+        Verify that a user marked is_active=False cannot authenticate,
+        receives the appropriate error message, and no session is created.
+        """
+        inactive_password = "inactivePassword123"
+        User.objects.create_user(
+            username="inactive_01",
+            password=inactive_password,
+            role=User.Role.STUDENT,
+            is_active=False,
+        )
+        response = self.client.post(
+            reverse("login"),
+            {"username": "inactive_01", "password": inactive_password},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "registration/login.html")
+        self.assertContains(response, "Please enter a correct username and password")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_login_rotates_session_key(self):
+        """
+        [Security / NFR] Verify session key rotation upon login to prevent session fixation.
+        The session key before authentication must differ from the session key after authentication.
+        """
+        # Obtain pre-login session key
+        self.client.get(reverse("login"))
+        pre_login_session_key = self.client.session.session_key
+
+        # Authenticate
+        response = self.client.post(
+            reverse("login"),
+            {"username": "admin_01", "password": self.admin_password},
+        )
+        self.assertRedirects(response, reverse("home"))
+
+        post_login_session_key = self.client.session.session_key
+        self.assertIsNotNone(post_login_session_key)
+        self.assertNotEqual(
+            pre_login_session_key,
+            post_login_session_key,
+            "Session key must cycle/rotate upon successful authentication",
+        )
