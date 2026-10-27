@@ -96,3 +96,44 @@ class StudentForm(forms.ModelForm):
         if not 1 <= semester <= 99:
             raise forms.ValidationError("Semester must be between 1 and 99.")
         return semester
+
+
+class StudentSearchForm(forms.Form):
+    """Validate REQ-04 searches by exact Student ID / USN or student name."""
+
+    search_by = forms.ChoiceField(
+        label="Search by",
+        choices=(("usn", "Student ID / USN"), ("name", "Student Name")),
+        required=True,
+        initial="usn",
+    )
+    query = forms.CharField(
+        label="Search value",
+        max_length=100,
+        required=True,
+        strip=True,
+        error_messages={"required": "Enter a Student ID / USN or Student Name to search."},
+        widget=forms.TextInput(
+            attrs={
+                "maxlength": 100,
+                "autocomplete": "off",
+            }
+        ),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        search_by = cleaned_data.get("search_by")
+        query = cleaned_data.get("query")
+        if not search_by or query is None:
+            return cleaned_data
+
+        if search_by == "usn":
+            if len(query) > 15:
+                self.add_error("query", "Student ID / USN must be at most 15 characters.")
+            elif not query.isascii() or not query.isalnum():
+                self.add_error(
+                    "query",
+                    "Student ID / USN must contain only English letters and numbers.",
+                )
+        return cleaned_data

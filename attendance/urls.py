@@ -27,8 +27,10 @@ urlpatterns = [
         views.section_update,
         name="section_update",
     ),
-    # Student Management (Issue #14)
+    # Student Management (Issues #14 and #15)
     path("students/", student_views.student_list, name="student_list"),
     path("students/create/", student_views.student_create, name="student_create"),
+    path("students/search/", student_views.student_search, name="student_search"),
+    path("students/<int:pk>/", student_views.student_detail, name="student_detail"),
     path("students/<int:pk>/edit/", student_views.student_update, name="student_update"),
 ]

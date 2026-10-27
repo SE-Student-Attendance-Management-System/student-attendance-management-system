@@ -9,6 +9,29 @@
     {% if messages %}
         {% for message in messages %}<p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>{% endfor %}
     {% endif %}
+
+    <section class="content-section" aria-labelledby="student-search-heading">
+        <h2 id="student-search-heading">Find a student</h2>
+        <form method="get" action="{% url 'student_search' %}" class="form-grid">
+            <div class="form-field">
+                <label for="student-list-search-by">Search by</label>
+                <select id="student-list-search-by" name="search_by" required>
+                    <option value="usn">Student ID / USN</option>
+                    <option value="name">Student Name</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="student-list-query">Search value</label>
+                <input id="student-list-query" type="text" name="query" maxlength="100"
+                       autocomplete="off" aria-describedby="student-list-query-help" required>
+                <small id="student-list-query-help">USN searches require the full identifier; name searches can return multiple matches.</small>
+            </div>
+            <div class="form-field">
+                <button class="btn btn-primary" type="submit">Search student</button>
+            </div>
+        </form>
+    </section>
+
     {% if students %}
         <div class="table-responsive">
             <table>
@@ -18,7 +41,10 @@
                     <tr>
                         <td>{{ student.usn }}</td><td>{{ student.name }}</td><td>{{ student.email }}</td>
                         <td>{{ student.program }}</td><td>{{ student.semester }}</td>
-                        <td><a class="btn btn-secondary" href="{% url 'student_update' student.pk %}">Edit</a></td>
+                        <td>
+                            <a class="btn btn-secondary" href="{% url 'student_detail' student.pk %}">View</a>
+                            <a class="btn btn-secondary" href="{% url 'student_update' student.pk %}">Edit</a>
+                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>

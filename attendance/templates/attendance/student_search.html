@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Search Student Records | SAMS{% endblock %}
+{% block content %}
+<section class="content-section" aria-labelledby="student-search-heading">
+    <div class="section-header">
+        <h1 id="student-search-heading">Search Student Records</h1>
+        {% if user.role == "ADMIN" %}<a class="btn btn-secondary" href="{% url 'student_list' %}">Back to student records</a>{% else %}<a class="btn btn-secondary" href="{% url 'home' %}">Back to dashboard</a>{% endif %}
+    </div>
+
+    <form method="get" action="{% url 'student_search' %}" class="form-grid" novalidate>
+        <div class="form-field">
+            {{ form.search_by.label_tag }}
+            {{ form.search_by }}
+            {% for error in form.search_by.errors %}<p class="form-errors" role="alert">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+            {{ form.query.label_tag }}
+            {{ form.query }}
+            {% for error in form.query.errors %}<p class="form-errors" role="alert">{{ error }}</p>{% endfor %}
+        </div>
+        {% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-field">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    {% if results %}
+        <section class="content-section" aria-labelledby="search-result-heading">
+            <h2 id="search-result-heading">Matching students ({{ results|length }})</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr><th>USN</th><th>Name</th><th>Email</th><th>Program</th><th>Semester</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    {% for student in results %}
+                        <tr>
+                            <td>{{ student.usn }}</td><td>{{ student.name }}</td><td>{{ student.email }}</td>
+                            <td>{{ student.program }}</td><td>{{ student.semester }}</td>
+                            <td><a class="btn btn-primary" href="{% url 'student_detail' student.pk %}">View profile</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% elif not_found %}
+        <p class="empty-state" role="status">No student records matched “{{ form.cleaned_data.query }}”. Check the search value and try again.</p>
+    {% endif %}
+</section>
+{% endblock %}
