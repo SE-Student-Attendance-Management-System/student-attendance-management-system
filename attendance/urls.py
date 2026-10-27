@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
+from . import student_views
 
 urlpatterns = [
     # Authentication & Landing Routes (Issue #11 / PR #27)
@@ -26,4 +27,8 @@ urlpatterns = [
         views.section_update,
         name="section_update",
     ),
+    # Student Management (Issue #14)
+    path("students/", student_views.student_list, name="student_list"),
+    path("students/create/", student_views.student_create, name="student_create"),
+    path("students/<int:pk>/edit/", student_views.student_update, name="student_update"),
 ]

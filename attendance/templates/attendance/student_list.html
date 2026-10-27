@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Student Records | SAMS{% endblock %}
+{% block content %}
+<section class="content-section" aria-labelledby="student-list-heading">
+    <div class="section-header">
+        <h1 id="student-list-heading">Student Records</h1>
+        <a class="btn btn-primary" href="{% url 'student_create' %}">Add student</a>
+    </div>
+    {% if messages %}
+        {% for message in messages %}<p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>{% endfor %}
+    {% endif %}
+    {% if students %}
+        <div class="table-responsive">
+            <table>
+                <thead><tr><th>USN</th><th>Name</th><th>Email</th><th>Program</th><th>Semester</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for student in students %}
+                    <tr>
+                        <td>{{ student.usn }}</td><td>{{ student.name }}</td><td>{{ student.email }}</td>
+                        <td>{{ student.program }}</td><td>{{ student.semester }}</td>
+                        <td><a class="btn btn-secondary" href="{% url 'student_update' student.pk %}">Edit</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state">No student records found.</p>
+    {% endif %}
+</section>
+{% endblock %}
