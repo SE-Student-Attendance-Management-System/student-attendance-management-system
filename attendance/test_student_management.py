@@ -38,6 +38,18 @@ class StudentFormTests(TestCase):
         form = StudentForm(data={**self.valid_data, "usn": "A12345678901234"})
         self.assertTrue(form.is_valid(), form.errors.as_json())
 
+    def test_maximum_valid_lengths_for_other_fields_are_accepted(self):
+        maximum_data = {
+            **self.valid_data,
+            "name": "N" * 100,
+            "email": f"{'a' * 64}@{'d' * 22}.example.test",
+            "phone": "1" * 15,
+            "program": "P" * 50,
+        }
+        self.assertEqual(len(maximum_data["email"]), 100)
+        form = StudentForm(data=maximum_data)
+        self.assertTrue(form.is_valid(), form.errors.as_json())
+
     def test_required_fields_cannot_be_blank(self):
         for field in ("usn", "name", "email", "program", "semester"):
             with self.subTest(field=field):
@@ -113,11 +125,40 @@ class StudentManagementViewTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.post(
             reverse("student_update", kwargs={"pk": self.student.pk}),
-            self.valid_payload(usn=self.student.usn, email=self.student.email, name="Updated Student"),
+            self.valid_payload(
+                usn=self.student.usn, email=self.student.email,
+                name="Updated Student", phone="9876501234",
+            ),
         )
         self.assertRedirects(response, reverse("student_list"))
         self.student.refresh_from_db()
         self.assertEqual(self.student.name, "Updated Student")
+        self.assertEqual(self.student.phone, "9876501234")
+
+    def test_invalid_update_does_not_modify_existing_record(self):
+        self.student.__class__.objects.create(
+            usn="USN100003",
+            name="Other Student",
+            email="other@example.test",
+            program="CSE",
+            semester=2,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("student_update", kwargs={"pk": self.student.pk}),
+            self.valid_payload(
+                usn="USN100003",
+                email="updated@example.test",
+                name="Must Not Persist",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("usn", response.context["form"].errors)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.usn, "USN100001")
+        self.assertEqual(self.student.name, "Existing Student")
+        self.assertEqual(self.student.email, "existing@example.test")
 
     def test_invalid_submission_does_not_create_partial_record(self):
         self.client.force_login(self.admin)
@@ -142,6 +183,22 @@ class StudentManagementViewTests(TestCase):
                 else:
                     self.assertEqual(post_response.status_code, 403)
                 self.assertFalse(Student.objects.filter(usn="USN999999").exists())
+
+                update_url = reverse("student_update", kwargs={"pk": self.student.pk})
+                update_get_response = self.client.get(update_url)
+                update_post_response = self.client.post(
+                    update_url,
+                    self.valid_payload(
+                        usn=self.student.usn,
+                        email=self.student.email,
+                        name="Unauthorized update",
+                    ),
+                )
+                expected_status = 302 if user is None else 403
+                self.assertEqual(update_get_response.status_code, expected_status)
+                self.assertEqual(update_post_response.status_code, expected_status)
+                self.student.refresh_from_db()
+                self.assertEqual(self.student.name, "Existing Student")
 
     def test_update_missing_student_returns_404(self):
         self.client.force_login(self.admin)
