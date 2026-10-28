@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Student Details | SAMS{% endblock %}
+{% block content %}
+<section class="content-section" aria-labelledby="student-detail-heading">
+    <div class="section-header">
+        <h1 id="student-detail-heading">Student Details</h1>
+        <div>
+            <a class="btn btn-secondary" href="{% url 'student_search' %}">Search another student</a>
+            {% if user.role == "ADMIN" %}<a class="btn btn-primary" href="{% url 'student_update' student.pk %}">Edit student</a>{% endif %}
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <tbody>
+                <tr><th scope="row">Student ID / USN</th><td>{{ student.usn }}</td></tr>
+                <tr><th scope="row">Student name</th><td>{{ student.name }}</td></tr>
+                <tr><th scope="row">Email</th><td>{{ student.email }}</td></tr>
+                <tr><th scope="row">Phone</th><td>{{ student.phone|default:"Not provided" }}</td></tr>
+                <tr><th scope="row">Course / Program</th><td>{{ student.program }}</td></tr>
+                <tr><th scope="row">Semester</th><td>{{ student.semester }}</td></tr>
+                <tr><th scope="row">Record status</th><td>{% if student.is_active %}Active{% else %}Inactive{% endif %}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    {% if user.role == "ADMIN" %}
+        <p><a class="btn btn-secondary" href="{% url 'student_list' %}">Back to student records</a></p>
+    {% else %}
+        <p><a class="btn btn-secondary" href="{% url 'home' %}">Back to dashboard</a></p>
+    {% endif %}
+</section>
+{% endblock %}

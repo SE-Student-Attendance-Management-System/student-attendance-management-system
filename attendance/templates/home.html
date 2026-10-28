@@ -13,16 +13,19 @@
     <div class="info-banner" style="border-left-color: #2563eb;">
         <h3>Administrator Dashboard</h3>
         <p>You have system-level management privileges under <strong>Issue #12 (Role-Based Authorization)</strong> and <strong>BR-02</strong>.</p>
-        <div style="margin-top: 1rem;">
-            <a href="{% url 'course_list' %}" class="btn btn-primary" id="admin-courses-btn" style="text-decoration: none;">
-                Manage Courses &amp; Class Sections
-            </a>
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="{% url 'course_list' %}" class="btn btn-primary" id="admin-courses-btn" style="text-decoration: none;">Manage Courses &amp; Class Sections</a>
+            <a href="{% url 'student_list' %}" class="btn btn-primary" id="admin-students-btn" style="text-decoration: none;">Manage Student Records</a>
+            <a href="{% url 'student_search' %}" class="btn btn-secondary" id="admin-student-search-btn" style="text-decoration: none;">Search Student Records</a>
         </div>
     </div>
     {% elif is_faculty %}
     <div class="info-banner" style="border-left-color: #059669;">
         <h3>Faculty Dashboard</h3>
         <p>You have access to mark and modify attendance for your assigned classes under <strong>BR-03</strong> and <strong>BR-05</strong>.</p>
+        <div style="margin-top: 1rem;">
+            <a href="{% url 'student_search' %}" class="btn btn-primary" id="faculty-student-search-btn" style="text-decoration: none;">Search Student Records</a>
+        </div>
         {% if faculty_sections %}
         <h4 style="margin-top: 1rem;">Your Assigned Class Sections:</h4>
         <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
@@ -54,9 +57,7 @@
     <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
         <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary" id="home-logout-btn">
-                Log Out
-            </button>
+            <button type="submit" class="btn btn-primary" id="home-logout-btn">Log Out</button>
         </form>
     </div>
 </div>
