@@ -217,6 +217,153 @@ class CourseManagementViewTests(TestCase):
         self.section.refresh_from_db()
         self.assertEqual(self.section.faculty, self.faculty)
 
+
+    def test_maximum_field_lengths_are_accepted(self):
+        course_code = "A" * 20
+        course_name = "N" * 100
+        section_name = "S" * 20
+        academic_term = "T" * 20
+
+        response = self.client.post(
+            reverse("course_create"),
+            {
+                "course_code": course_code,
+                "course_name": course_name,
+                "semester": 4,
+                "faculty": self.faculty.pk,
+                "section": section_name,
+                "academic_term": academic_term,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        course = Course.objects.get(course_code=course_code)
+        section = ClassSection.objects.get(course=course)
+        self.assertEqual(len(course.course_name), 100)
+        self.assertEqual(len(section.section), 20)
+        self.assertEqual(len(section.academic_term), 20)
+
+    def test_overlength_fields_are_rejected_without_saving(self):
+        cases = [
+            ("course_code", "A" * 21),
+            ("course_name", "N" * 101),
+            ("section", "S" * 21),
+            ("academic_term", "T" * 21),
+        ]
+
+        for field, invalid_value in cases:
+            with self.subTest(field=field):
+                payload = {
+                    "course_code": "CS900",
+                    "course_name": "Test Course",
+                    "semester": 4,
+                    "faculty": self.faculty.pk,
+                    "section": "B",
+                    "academic_term": "2027-28",
+                }
+                payload[field] = invalid_value
+
+                response = self.client.post(
+                    reverse("course_create"), payload
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(
+                    Course.objects.filter(course_code="CS900").exists()
+                )
+
+        self.assertEqual(Course.objects.count(), 1)
+        self.assertEqual(ClassSection.objects.count(), 1)
+
+    def test_required_fields_and_course_id_format_are_validated(self):
+        cases = [
+            ("course_code", ""),
+            ("course_name", ""),
+            ("semester", ""),
+            ("faculty", ""),
+            ("section", ""),
+            ("academic_term", ""),
+            ("course_code", "CS-101"),
+            ("course_code", "CS_101"),
+        ]
+
+        for field, invalid_value in cases:
+            with self.subTest(field=field, value=invalid_value):
+                payload = {
+                    "course_code": "CS900",
+                    "course_name": "Test Course",
+                    "semester": 4,
+                    "faculty": self.faculty.pk,
+                    "section": "B",
+                    "academic_term": "2027-28",
+                }
+                payload[field] = invalid_value
+
+                response = self.client.post(
+                    reverse("course_create"), payload
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(
+                    Course.objects.filter(course_code="CS900").exists()
+                )
+
+        self.assertEqual(Course.objects.count(), 1)
+        self.assertEqual(ClassSection.objects.count(), 1)
+
+
+    def test_reassignment_updates_faculty_class_visibility(self):
+        old_user = User.objects.create_user(
+            username="old_faculty",
+            password="test-password-123",
+            role=User.Role.FACULTY,
+        )
+        self.faculty.user = old_user
+        self.faculty.save()
+
+        new_user = User.objects.create_user(
+            username="new_faculty",
+            password="test-password-123",
+            role=User.Role.FACULTY,
+        )
+        new_faculty = Faculty.objects.create(
+            faculty_code="FAC104",
+            name="Replacement Faculty",
+            email="replacement@example.com",
+            department="CSE",
+            user=new_user,
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse(
+                "section_update",
+                kwargs={
+                    "pk": self.course.pk,
+                    "section_pk": self.section.pk,
+                },
+            ),
+            {
+                "course_code": self.course.course_code,
+                "course_name": self.course.course_name,
+                "semester": self.course.semester,
+                "faculty": new_faculty.pk,
+                "section": self.section.section,
+                "academic_term": self.section.academic_term,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
+        self.client.force_login(old_user)
+        old_dashboard = self.client.get(reverse("home"))
+        self.assertEqual(old_dashboard.status_code, 200)
+        self.assertNotContains(old_dashboard, "Database Systems")
+
+        self.client.force_login(new_user)
+        new_dashboard = self.client.get(reverse("home"))
+        self.assertEqual(new_dashboard.status_code, 200)
+        self.assertContains(new_dashboard, "Database Systems")
+
     def test_non_admin_cannot_manage_courses(self):
         self.client.logout()
 
