@@ -466,3 +466,163 @@ class AuthenticationTests(TestCase):
             post_login_session_key,
             "Session key must cycle/rotate upon successful authentication",
         )
+class StudentAttendanceHistoryTests(TestCase):
+    def setUp(self):
+        self.student_user = User.objects.create_user(
+            username="history_student",
+            password="test-password-123",
+            role=User.Role.STUDENT,
+        )
+        self.student = Student.objects.create(
+            usn="HIST001",
+            user=self.student_user,
+            name="History Student",
+            email="history@example.com",
+            program="CSE",
+            semester=3,
+        )
+
+        self.other_student = Student.objects.create(
+            usn="HIST002",
+            name="Other Student",
+            email="other-history@example.com",
+            program="CSE",
+            semester=3,
+        )
+
+        self.faculty_user = User.objects.create_user(
+            username="history_faculty",
+            password="test-password-123",
+            role=User.Role.FACULTY,
+        )
+        self.admin_user = User.objects.create_user(
+            username="history_admin",
+            password="test-password-123",
+            role=User.Role.ADMIN,
+        )
+
+        self.faculty = Faculty.objects.create(
+            faculty_code="HISTFAC",
+            user=self.faculty_user,
+            name="History Faculty",
+            email="history-faculty@example.com",
+            department="CSE",
+        )
+        self.course = Course.objects.create(
+            course_code="HIST101",
+            course_name="History Test Course",
+            semester=3,
+        )
+        self.section = ClassSection.objects.create(
+            course=self.course,
+            faculty=self.faculty,
+            section="A",
+            academic_term="2026-27",
+        )
+        self.session = AttendanceSession.objects.create(
+            class_section=self.section,
+            session_date="2026-10-22",
+            session_no=1,
+        )
+
+        Enrollment.objects.create(
+            student=self.student,
+            class_section=self.section,
+        )
+        Enrollment.objects.create(
+            student=self.other_student,
+            class_section=self.section,
+        )
+
+    def test_student_sees_only_own_history(self):
+        own_record = AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+        AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.other_student,
+            status=AttendanceRecord.Status.ABSENT,
+            marked_by=self.faculty_user,
+        )
+
+        self.client.force_login(self.student_user)
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, "attendance/student_attendance_history.html"
+        )
+        self.assertContains(response, "HIST001")
+        self.assertContains(response, "HIST101")
+        self.assertContains(response, "Present")
+        self.assertEqual(
+            list(response.context["records"].values_list("pk", flat=True)),
+            [own_record.pk],
+        )
+
+    def test_empty_history_shows_message(self):
+        self.client.force_login(self.student_user)
+
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No attendance records found.")
+
+    def test_unauthenticated_user_is_redirected_to_login(self):
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next="
+            f"{reverse('student_attendance_history')}",
+        )
+
+    def test_non_students_are_denied(self):
+        for user in (self.faculty_user, self.admin_user):
+            with self.subTest(role=user.role):
+                self.client.force_login(user)
+                response = self.client.get(
+                    reverse("student_attendance_history")
+                )
+                self.assertEqual(response.status_code, 403)
+
+    def test_student_without_profile_is_denied(self):
+        unlinked_user = User.objects.create_user(
+            username="unlinked_student",
+            password="test-password-123",
+            role=User.Role.STUDENT,
+        )
+        self.client.force_login(unlinked_user)
+
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_post_cannot_modify_attendance(self):
+        record = AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+        self.client.force_login(self.student_user)
+
+        response = self.client.post(
+            reverse("student_attendance_history"),
+            {"status": "ABSENT"},
+        )
+
+        self.assertEqual(response.status_code, 405)
+        record.refresh_from_db()
+        self.assertEqual(record.status, AttendanceRecord.Status.PRESENT)

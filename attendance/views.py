@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
+from django.views.decorators.http import require_GET
 
 from .models import (
     AttendanceRecord,
@@ -203,6 +204,38 @@ def section_update(request, pk, section_pk):
 # ==============================================================================
 # Attendance Management Views (Issue #31)
 # ==============================================================================
+
+@login_required
+@require_GET
+def student_attendance_history(request):
+    """Display attendance records belonging only to the logged-in student."""
+    if request.user.role != "STUDENT":
+        raise PermissionDenied(
+            "Only students can access their attendance history."
+        )
+
+    try:
+        student = request.user.student_profile
+    except Student.DoesNotExist:
+        raise PermissionDenied(
+            "Your account is not linked to a student profile."
+        )
+
+    records = (
+        AttendanceRecord.objects.filter(student=student)
+        .select_related(
+            "session__class_section__course",
+            "session__class_section__faculty",
+        )
+        .order_by("-session__session_date", "-session__session_no")
+    )
+
+    return render(
+        request,
+        "attendance/student_attendance_history.html",
+        {"student": student, "records": records},
+    )
+
 
 @login_required
 def attendance_sessions(request):
