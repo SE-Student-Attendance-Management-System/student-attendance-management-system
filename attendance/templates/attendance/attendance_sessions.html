@@ -1,0 +1,74 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Attendance Sessions - SAMS{% endblock %}
+
+{% block content %}
+<h1>Attendance Sessions</h1>
+
+{% if messages %}
+    {% for message in messages %}
+        <p class="message {{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+{% if sessions %}
+<table>
+    <thead>
+        <tr>
+            <th>Course</th>
+            <th>Section</th>
+            <th>Faculty</th>
+            <th>Date</th>
+            <th>Session</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for session in sessions %}
+        <tr>
+            <td>{{ session.class_section.course.course_code }}</td>
+            <td>{{ session.class_section.section }}</td>
+            <td>{{ session.class_section.faculty.name }}</td>
+            <td>{{ session.session_date }}</td>
+            <td>{{ session.session_no }}</td>
+            <td>
+                <a href="{% url 'attendance_mark' session.session_id %}">
+                    View / Mark
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No attendance sessions are available.</p>
+{% endif %}
+
+<h2>Create a Session</h2>
+
+{% if user.role == "FACULTY" %}
+    {% for section in user.faculty_profile.class_sections.all %}
+        <p>
+            {{ section.course.course_code }} — {{ section.section }}
+            <a href="{% url 'attendance_session_create' section.class_section_id %}">
+                Create session
+            </a>
+        </p>
+    {% empty %}
+        <p>No assigned class sections.</p>
+    {% endfor %}
+{% elif user.role == "ADMIN" %}
+    {% for section in admin_sections %}
+        <p>
+            {{ section.course.course_code }} — {{ section.section }}
+            <a href="{% url 'attendance_session_create' section.class_section_id %}">
+                Create session
+            </a>
+        </p>
+    {% empty %}
+        <p>No class sections are available.</p>
+    {% endfor %}
+{% endif %}
+
+<p><a href="{% url 'home' %}">Back to dashboard</a></p>
+{% endblock %}

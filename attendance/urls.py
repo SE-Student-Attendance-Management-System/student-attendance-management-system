@@ -33,4 +33,26 @@ urlpatterns = [
     path("students/search/", student_views.student_search, name="student_search"),
     path("students/<int:pk>/", student_views.student_detail, name="student_detail"),
     path("students/<int:pk>/edit/", student_views.student_update, name="student_update"),
+    # Attendance Management (Issue #31)
+    path(
+        "attendance/",
+        views.attendance_sessions,
+        name="attendance_sessions",
+    ),
+    path(
+        "attendance/sections/<int:section_pk>/create/",
+        views.attendance_session_create,
+        name="attendance_session_create",
+    ),
+    path(
+        "attendance/sessions/<int:session_pk>/",
+        views.attendance_mark,
+        name="attendance_mark",
+    ),
+    path(
+        "attendance/records/<int:attendance_pk>/edit/",
+        views.attendance_update,
+        name="attendance_update",
+    ),
+
 ]

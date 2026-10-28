@@ -1,0 +1,50 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Create Attendance Session - SAMS{% endblock %}
+
+{% block content %}
+<h1>Create Attendance Session</h1>
+
+<h2>{{ section.course.course_code }} — Section {{ section.section }}</h2>
+<p>Academic term: {{ section.academic_term }}</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <p class="message {{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <p>
+        <label for="session_date">Session date</label>
+        <input
+            type="date"
+            id="session_date"
+            name="session_date"
+            max="{{ today }}"
+            required
+        >
+    </p>
+
+    <p>
+        <label for="session_no">Session number</label>
+        <input
+            type="number"
+            id="session_no"
+            name="session_no"
+            min="1"
+            max="32767"
+            value="1"
+            required
+        >
+    </p>
+
+    <button type="submit">Create / Open Session</button>
+</form>
+
+<p>
+    <a href="{% url 'attendance_sessions' %}">Back to sessions</a>
+</p>
+{% endblock %}
