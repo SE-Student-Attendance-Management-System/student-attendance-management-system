@@ -1,0 +1,42 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Edit Attendance - SAMS{% endblock %}
+
+{% block content %}
+<h1>Edit Attendance</h1>
+
+<p>Student: {{ record.student.name }} ({{ record.student.usn }})</p>
+<p>Course: {{ record.session.class_section.course.course_code }}</p>
+<p>Section: {{ record.session.class_section.section }}</p>
+<p>Date: {{ record.session.session_date }}</p>
+<p>Current status: {{ record.get_status_display }}</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <p class="message {{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <label for="status">New status</label>
+
+    <select name="status" id="status" required>
+        {% for value, label in status_choices %}
+            <option value="{{ value }}"
+                {% if record.status == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<p>
+    <a href="{% url 'attendance_mark' record.session.session_id %}">
+        Back to attendance
+    </a>
+</p>
+{% endblock %}

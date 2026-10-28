@@ -1,0 +1,86 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Mark Attendance - SAMS{% endblock %}
+
+{% block content %}
+<h1>Mark Attendance</h1>
+
+<h2>
+    {{ session.class_section.course.course_code }}
+    — Section {{ session.class_section.section }}
+</h2>
+
+<p>Date: {{ session.session_date }} | Session: {{ session.session_no }}</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <p class="message {{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<h2>Existing Attendance Records</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>USN</th>
+            <th>Student</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in attendance_records %}
+        <tr>
+            <td>{{ record.student.usn }}</td>
+            <td>{{ record.student.name }}</td>
+            <td>{{ record.get_status_display }}</td>
+            <td>
+                <a href="{% url 'attendance_update' record.attendance_id %}">
+                    Edit
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No attendance records have been created.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Mark Unrecorded Students</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    {% for student in unmarked_students %}
+        <div>
+            <label for="status_{{ student.student_id }}">
+                {{ student.usn }} — {{ student.name }}
+            </label>
+
+            <select
+                id="status_{{ student.student_id }}"
+                name="status_{{ student.student_id }}"
+                required
+            >
+                <option value="">Select status</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% empty %}
+        <p>All enrolled students already have attendance records.</p>
+    {% endfor %}
+
+    {% if unmarked_students %}
+        <button type="submit">Submit Attendance</button>
+    {% endif %}
+</form>
+
+<p>
+    <a href="{% url 'attendance_sessions' %}">Back to sessions</a>
+</p>
+{% endblock %}
