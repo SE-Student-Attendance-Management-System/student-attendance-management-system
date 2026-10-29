@@ -550,6 +550,7 @@ def attendance_report(request):
     submitted = (
         "generate" in request.GET
         or "class_section" in request.GET
+        or "course" in request.GET
         or "date_from" in request.GET
         or "date_to" in request.GET
         or "student_id" in request.GET
@@ -582,6 +583,7 @@ def attendance_report(request):
 
     if submitted and form_is_valid and not invalid_section_error:
         selected_section = form.cleaned_data.get("class_section")
+        selected_course = form.cleaned_data.get("course")
         date_from = form.cleaned_data.get("date_from")
         date_to = form.cleaned_data.get("date_to")
         student_id = form.cleaned_data.get("student_id") or request.GET.get("student_usn", "").strip()
@@ -590,6 +592,7 @@ def attendance_report(request):
             report_rows = generate_attendance_report(
                 user=request.user,
                 class_section_id=selected_section.pk if selected_section else None,
+                course_id=selected_course.pk if selected_course else None,
                 date_from=date_from,
                 date_to=date_to,
                 student_usn=student_id,
