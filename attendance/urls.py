@@ -17,7 +17,11 @@ urlpatterns = [
         name="logout",
     ),
     path("", views.home, name="home"),
-
+    path(
+        "student/attendance-history/",
+        views.student_attendance_history,
+        name="student_attendance_history",
+),
     # Course & Class Section Management Routes (Issue #20 / PR #26)
     path("courses/", views.course_list, name="course_list"),
     path("courses/create/", views.course_create, name="course_create"),

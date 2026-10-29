@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance History - SAMS{% endblock %}
+
+{% block content %}
+<section class="content-section">
+    <h1>My Attendance History</h1>
+    <p>
+        Student: <strong>{{ student.name }}</strong>
+        ({{ student.usn }})
+    </p>
+
+    {% if records %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Section</th>
+                    <th>Date</th>
+                    <th>Session</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>
+                        {{ record.session.class_section.course.course_code }}
+                        - {{ record.session.class_section.course.course_name }}
+                    </td>
+                    <td>{{ record.session.class_section.section }}</td>
+                    <td>{{ record.session.session_date|date:"d M Y" }}</td>
+                    <td>{{ record.session.session_no }}</td>
+                    <td>{{ record.get_status_display }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No attendance records found.</p>
+    {% endif %}
+
+    <p>
+        <a class="btn btn-secondary" href="{% url 'home' %}">
+            Back to dashboard
+        </a>
+    </p>
+</section>
+{% endblock %}

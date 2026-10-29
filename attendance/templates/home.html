@@ -41,6 +41,7 @@
     <div class="info-banner" style="border-left-color: #d97706;">
         <h3>Student Dashboard</h3>
         <p>You have read-only access to your personal attendance records and attendance history under <strong>BR-04</strong>.</p>
+	<p style="margin-top: 1rem;"><a class="btn btn-primary" href="{% url 'student_attendance_history' %}">View Attendance History</a></p>
         {% if student_enrollments %}
         <h4 style="margin-top: 1rem;">Your Enrolled Class Sections:</h4>
         <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
