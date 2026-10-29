@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Reports - SAMS{% endblock %}
+
+{% block content %}
+<section class="content-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h1>Attendance Reports</h1>
+            <p style="color: var(--slate-600); margin: 0.25rem 0 0 0;">
+                Generate attendance reports for students and classes (REQ-12, BR-08).
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'home' %}" class="btn btn-secondary" style="text-decoration: none;">&larr; Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Filter Criteria Form -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-top: 0; margin-bottom: 1rem;">Report Criteria</h3>
+        <form method="get" action="{% url 'attendance_report' %}" id="attendance-report-form">
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <p style="margin: 0;">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label for="id_class_section" class="form-label">Class Section</label>
+                    {{ form.class_section }}
+                    {% if form.class_section.errors %}
+                        <div style="color: var(--danger-text); font-size: 0.85rem; margin-top: 0.25rem;">
+                            {{ form.class_section.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_date_from" class="form-label">Date From</label>
+                    {{ form.date_from }}
+                    {% if form.date_from.errors %}
+                        <div style="color: var(--danger-text); font-size: 0.85rem; margin-top: 0.25rem;">
+                            {{ form.date_from.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_date_to" class="form-label">Date To</label>
+                    {{ form.date_to }}
+                    {% if form.date_to.errors %}
+                        <div style="color: var(--danger-text); font-size: 0.85rem; margin-top: 0.25rem;">
+                            {{ form.date_to.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_student_id" class="form-label">Student ID / USN</label>
+                    {{ form.student_id }}
+                    {% if form.student_id.errors %}
+                        <div style="color: var(--danger-text); font-size: 0.85rem; margin-top: 0.25rem;">
+                            {{ form.student_id.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" name="generate" value="1" class="btn btn-primary" id="btn-generate-report">Generate</button>
+                <a href="{% url 'attendance_report' %}" class="btn btn-secondary" style="text-decoration: none;">Reset Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Report Results Display -->
+    {% if submitted %}
+        {% if report_rows %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--slate-200); padding-bottom: 0.75rem;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.25rem;">Attendance Report</h2>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--slate-600); font-size: 0.9rem;">
+                        Total matching entries: <strong>{{ total_records }}</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;" id="attendance-report-table">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--slate-200); background-color: var(--slate-100);">
+                            <th style="padding: 0.75rem;">Student ID / USN</th>
+                            <th style="padding: 0.75rem;">Student Name</th>
+                            <th style="padding: 0.75rem;">Course ID</th>
+                            <th style="padding: 0.75rem;">Course Name</th>
+                            <th style="padding: 0.75rem;">Section</th>
+                            <th style="padding: 0.75rem; text-align: center;">Total Classes</th>
+                            <th style="padding: 0.75rem; text-align: center;">Attended Classes</th>
+                            <th style="padding: 0.75rem; text-align: center;">Absent Classes</th>
+                            <th style="padding: 0.75rem; text-align: right;">Attendance Percentage</th>
+                            <th style="padding: 0.75rem; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_rows %}
+                        <tr style="border-bottom: 1px solid var(--slate-200);">
+                            <td style="padding: 0.75rem; font-weight: 600;">{{ row.usn }}</td>
+                            <td style="padding: 0.75rem;">{{ row.student_name }}</td>
+                            <td style="padding: 0.75rem;">{{ row.course_code }}</td>
+                            <td style="padding: 0.75rem;">{{ row.course_name }}</td>
+                            <td style="padding: 0.75rem;">{{ row.section }}</td>
+                            <td style="padding: 0.75rem; text-align: center;">{{ row.total_classes }}</td>
+                            <td style="padding: 0.75rem; text-align: center; color: var(--success-text); font-weight: 600;">{{ row.attended_classes }}</td>
+                            <td style="padding: 0.75rem; text-align: center; color: var(--danger-text); font-weight: 600;">{{ row.absent_classes }}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600;">
+                                {% if row.total_classes %}
+                                    {{ row.percentage|floatformat:2 }}%
+                                {% else %}
+                                    <span style="color: var(--slate-500);">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.75rem; text-align: center;">
+                                {% if row.status %}
+                                    <span style="background-color: var(--slate-100); color: var(--slate-600); border: 1px solid var(--slate-200); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                        {{ row.status }}
+                                    </span>
+                                {% else %}
+                                    <span style="color: var(--slate-500);">&mdash;</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% elif not form.errors %}
+        <div class="alert alert-info" id="no-attendance-data" style="background-color: var(--primary-light); border: 1px solid #bfdbfe; color: #1e40af; border-radius: var(--radius); padding: 1rem;">
+            No attendance data available for the selected criteria.
+        </div>
+        {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

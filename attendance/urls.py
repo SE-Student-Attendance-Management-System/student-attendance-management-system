@@ -58,5 +58,15 @@ urlpatterns = [
         views.attendance_update,
         name="attendance_update",
     ),
-
+    # Attendance Report Generation (Issue #34 / REQ-12 / BR-08)
+    path(
+        "reports/",
+        views.attendance_report,
+        name="attendance_report",
+    ),
+    path(
+        "attendance/reports/",
+        views.attendance_report,
+        name="attendance_reports",
+    ),
 ]
