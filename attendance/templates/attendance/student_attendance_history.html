@@ -9,6 +9,48 @@
         Student: <strong>{{ student.name }}</strong>
         ({{ student.usn }})
     </p>
+<h2>Attendance Percentage by Class</h2>
+
+{% if attendance_summaries %}
+<div class="table-responsive">
+    <table>
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Section</th>
+                <th>Academic Term</th>
+                <th>Present / Recorded Sessions</th>
+                <th>Attendance Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for summary in attendance_summaries %}
+            <tr>
+                <td>
+                    {{ summary.class_section.course.course_code }}
+                    - {{ summary.class_section.course.course_name }}
+                </td>
+                <td>{{ summary.class_section.section }}</td>
+                <td>{{ summary.class_section.academic_term }}</td>
+                <td>
+                    {{ summary.attended_sessions }}
+                    / {{ summary.total_sessions }}
+                </td>
+                <td>
+                    {% if summary.total_sessions %}
+                        {{ summary.percentage|floatformat:2 }}%
+                    {% else %}
+                        No attendance records yet
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>No class sections available to calculate attendance.</p>
+{% endif %}
 
     {% if records %}
     <div class="table-responsive">

@@ -626,3 +626,154 @@ class StudentAttendanceHistoryTests(TestCase):
         self.assertEqual(response.status_code, 405)
         record.refresh_from_db()
         self.assertEqual(record.status, AttendanceRecord.Status.PRESENT)
+    def test_attendance_percentage_is_zero_when_all_records_are_absent(self):
+        AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.ABSENT,
+            marked_by=self.faculty_user,
+        )
+
+        self.client.force_login(self.student_user)
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.context["attendance_summaries"][0]
+
+        self.assertEqual(summary["total_sessions"], 1)
+        self.assertEqual(summary["attended_sessions"], 0)
+        self.assertEqual(summary["percentage"], 0)
+        self.assertContains(response, "0.00%")
+
+
+    def test_attendance_percentage_is_100_when_all_records_are_present(self):
+        AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+
+        # Another student's absence must not affect this student's result.
+        AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.other_student,
+            status=AttendanceRecord.Status.ABSENT,
+            marked_by=self.faculty_user,
+        )
+
+        self.client.force_login(self.student_user)
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.context["attendance_summaries"][0]
+
+        self.assertEqual(summary["total_sessions"], 1)
+        self.assertEqual(summary["attended_sessions"], 1)
+        self.assertEqual(summary["percentage"], 100)
+        self.assertContains(response, "100.00%")
+
+
+    def test_attendance_percentage_handles_mixed_records(self):
+        second_session = AttendanceSession.objects.create(
+            class_section=self.section,
+            session_date="2026-10-23",
+            session_no=1,
+        )
+
+        AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+        AttendanceRecord.objects.create(
+            session=second_session,
+            student=self.student,
+            status=AttendanceRecord.Status.ABSENT,
+            marked_by=self.faculty_user,
+        )
+
+        self.client.force_login(self.student_user)
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.context["attendance_summaries"][0]
+
+        self.assertEqual(summary["total_sessions"], 2)
+        self.assertEqual(summary["attended_sessions"], 1)
+        self.assertEqual(summary["percentage"], 50)
+        self.assertContains(response, "50.00%")
+
+
+    def test_no_attendance_records_have_no_percentage(self):
+        self.client.force_login(self.student_user)
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.context["attendance_summaries"][0]
+
+        self.assertEqual(summary["total_sessions"], 0)
+        self.assertEqual(summary["attended_sessions"], 0)
+        self.assertIsNone(summary["percentage"])
+        self.assertContains(response, "No attendance records yet")
+
+
+    def test_attendance_percentages_are_scoped_to_each_class_section(self):
+        other_course = Course.objects.create(
+            course_code="HIST102",
+            course_name="Other Test Course",
+            semester=3,
+        )
+        other_section = ClassSection.objects.create(
+            course=other_course,
+            faculty=self.faculty,
+            section="B",
+            academic_term="2026-27",
+        )
+
+        Enrollment.objects.create(
+            student=self.student,
+            class_section=other_section,
+        )
+
+        other_session = AttendanceSession.objects.create(
+            class_section=other_section,
+            session_date="2026-10-23",
+            session_no=1,
+        )
+
+        AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+        AttendanceRecord.objects.create(
+            session=other_session,
+            student=self.student,
+            status=AttendanceRecord.Status.ABSENT,
+            marked_by=self.faculty_user,
+        )
+
+        self.client.force_login(self.student_user)
+        response = self.client.get(
+            reverse("student_attendance_history")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        summaries = {
+            item["class_section"].pk: item
+            for item in response.context["attendance_summaries"]
+        }
+
+        self.assertEqual(summaries[self.section.pk]["percentage"], 100)
+        self.assertEqual(summaries[other_section.pk]["percentage"], 0)

@@ -1,5 +1,5 @@
-
 from django.core.exceptions import ValidationError, PermissionDenied
+from django.db.models import Count, Q
 from django.db import transaction
 from django.utils import timezone
 
@@ -7,6 +7,7 @@ from .models import (
     AttendanceAudit,
     AttendanceRecord,
     AttendanceSession,
+    ClassSection,
     Enrollment,
 )
 
@@ -105,3 +106,64 @@ def update_attendance(*, attendance_id, status, changed_by):
     )
 
     return record
+def calculate_attendance_percentages(*, student):
+    """
+    Calculate recorded attendance percentages for each class section.
+
+    Only stored attendance records count toward the denominator.
+    Sections without recorded attendance have percentage=None.
+    """
+    counts_by_section = {
+        row["session__class_section_id"]: row
+        for row in (
+            AttendanceRecord.objects.filter(student=student)
+            .values("session__class_section_id")
+            .annotate(
+                total_sessions=Count("pk"),
+                attended_sessions=Count(
+                    "pk",
+                    filter=Q(
+                        status=AttendanceRecord.Status.PRESENT
+                    ),
+                ),
+            )
+        )
+    }
+
+    sections = (
+        ClassSection.objects.filter(
+            Q(enrollments__student=student)
+            | Q(
+                attendance_sessions__attendance_records__student=student
+            )
+        )
+        .select_related("course")
+        .distinct()
+        .order_by(
+            "course__course_code",
+            "section",
+            "academic_term",
+        )
+    )
+
+    summaries = []
+
+    for section in sections:
+        counts = counts_by_section.get(section.pk, {})
+        total = counts.get("total_sessions", 0)
+        attended = counts.get("attended_sessions", 0)
+
+        percentage = (
+            round(attended * 100 / total, 2)
+            if total
+            else None
+        )
+
+        summaries.append({
+            "class_section": section,
+            "total_sessions": total,
+            "attended_sessions": attended,
+            "percentage": percentage,
+        })
+
+    return summaries
