@@ -10,6 +10,7 @@ from .models import (
 from .permissions import can_faculty_manage_section
 from .services import (
     calculate_attendance_percentages,
+    generate_attendance_report,
     mark_attendance,
     update_attendance,
 )
@@ -18,7 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import CourseForm, ClassSectionForm
+from .forms import CourseForm, ClassSectionForm, AttendanceReportForm
 from .models import Course, ClassSection
 from .permissions import admin_required, can_manage_courses
 
@@ -502,3 +503,107 @@ def attendance_update(request, attendance_pk):
             "status_choices": AttendanceRecord.Status.choices,
         },
     )
+
+
+# ==============================================================================
+# Attendance Report Generation Views (Issue #34 / REQ-12 / BR-08)
+# ==============================================================================
+
+@login_required
+def attendance_report(request):
+    """
+    Generate attendance reports for authorized administrators and faculty (Issue #34).
+
+    Traceability:
+    - Functional Requirement: REQ-12 (Generate attendance reports)
+    - Business Rule: BR-08 (Only authorized users shall generate attendance reports)
+    - Performance Requirement: Reports shall complete within 5 seconds for normal-sized datasets
+    """
+    if request.user.role not in ("ADMIN", "FACULTY"):
+        raise PermissionDenied("Students cannot access report generation.")
+
+    # Server-side validation and authorization check on class_section criteria
+    raw_section_id = (
+        request.GET.get("class_section")
+        or request.POST.get("class_section")
+        or ""
+    ).strip()
+
+    invalid_section_error = None
+    if raw_section_id:
+        try:
+            section_pk = int(raw_section_id)
+            target_sec = ClassSection.objects.select_related("faculty").get(
+                pk=section_pk
+            )
+            if request.user.role == "FACULTY" and not can_faculty_manage_section(
+                request.user, target_sec
+            ):
+                raise PermissionDenied(
+                    "Faculty can only generate reports for their assigned class sections."
+                )
+        except ValueError:
+            invalid_section_error = "Select a valid class section."
+        except ClassSection.DoesNotExist:
+            invalid_section_error = "Selected class section does not exist."
+
+    submitted = (
+        "generate" in request.GET
+        or "class_section" in request.GET
+        or "date_from" in request.GET
+        or "date_to" in request.GET
+        or "student_id" in request.GET
+        or "student_usn" in request.GET
+        or request.method == "POST"
+    )
+
+    data_source = (
+        request.POST
+        if request.method == "POST"
+        else (request.GET if submitted else None)
+    )
+    form = AttendanceReportForm(data_source, user=request.user)
+
+    # Use a specific message for malformed, non-numeric section IDs.
+    # Numeric IDs that do not exist retain the form's configured message.
+    if invalid_section_error == "Select a valid class section.":
+        form.fields["class_section"].error_messages["invalid_choice"] = (
+            "Select a valid class section."
+        )
+    report_rows = []
+    selected_section = None
+
+    # Run form validation first; subsequent custom errors must not be
+    # cleared by Django's full_clean() process.
+    form_is_valid = form.is_valid() if submitted else False
+
+    if invalid_section_error:
+        form.add_error("class_section", invalid_section_error)
+
+    if submitted and form_is_valid and not invalid_section_error:
+        selected_section = form.cleaned_data.get("class_section")
+        date_from = form.cleaned_data.get("date_from")
+        date_to = form.cleaned_data.get("date_to")
+        student_id = form.cleaned_data.get("student_id") or request.GET.get("student_usn", "").strip()
+
+        try:
+            report_rows = generate_attendance_report(
+                user=request.user,
+                class_section_id=selected_section.pk if selected_section else None,
+                date_from=date_from,
+                date_to=date_to,
+                student_usn=student_id,
+            )
+        except ValidationError as exc:
+            form.add_error(None, exc.message if hasattr(exc, "message") else str(exc))
+
+    context = {
+        "form": form,
+        "report_rows": report_rows,
+        "submitted": submitted,
+        "selected_section": selected_section,
+        "has_data": bool(report_rows),
+        "total_records": len(report_rows),
+    }
+
+    return render(request, "attendance/attendance_report.html", context)

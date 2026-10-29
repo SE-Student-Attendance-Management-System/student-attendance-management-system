@@ -17,14 +17,16 @@
             <a href="{% url 'course_list' %}" class="btn btn-primary" id="admin-courses-btn" style="text-decoration: none;">Manage Courses &amp; Class Sections</a>
             <a href="{% url 'student_list' %}" class="btn btn-primary" id="admin-students-btn" style="text-decoration: none;">Manage Student Records</a>
             <a href="{% url 'student_search' %}" class="btn btn-secondary" id="admin-student-search-btn" style="text-decoration: none;">Search Student Records</a>
+            <a href="{% url 'attendance_report' %}" class="btn btn-secondary" id="admin-attendance-reports-btn" style="text-decoration: none;">Attendance Reports</a>
         </div>
     </div>
     {% elif is_faculty %}
     <div class="info-banner" style="border-left-color: #059669;">
         <h3>Faculty Dashboard</h3>
         <p>You have access to mark and modify attendance for your assigned classes under <strong>BR-03</strong> and <strong>BR-05</strong>.</p>
-        <div style="margin-top: 1rem;">
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
             <a href="{% url 'student_search' %}" class="btn btn-primary" id="faculty-student-search-btn" style="text-decoration: none;">Search Student Records</a>
+            <a href="{% url 'attendance_report' %}" class="btn btn-secondary" id="faculty-attendance-reports-btn" style="text-decoration: none;">Attendance Reports</a>
         </div>
         {% if faculty_sections %}
         <h4 style="margin-top: 1rem;">Your Assigned Class Sections:</h4>
