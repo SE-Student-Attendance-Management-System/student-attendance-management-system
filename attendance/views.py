@@ -1,7 +1,6 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 from django.views.decorators.http import require_GET
-
 from .models import (
     AttendanceRecord,
     AttendanceSession,
@@ -9,7 +8,11 @@ from .models import (
     Student,
 )
 from .permissions import can_faculty_manage_section
-from .services import mark_attendance, update_attendance
+from .services import (
+    calculate_attendance_percentages,
+    mark_attendance,
+    update_attendance,
+)
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -233,7 +236,13 @@ def student_attendance_history(request):
     return render(
         request,
         "attendance/student_attendance_history.html",
-        {"student": student, "records": records},
+        {
+	    "student": student,
+	    "records": records,
+	    "attendance_summaries": (
+	        calculate_attendance_percentages(student=student)
+	    ),
+	},
     )
 
 
