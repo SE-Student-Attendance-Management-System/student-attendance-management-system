@@ -600,6 +600,32 @@ class AttendanceReportFunctionalityTests(AttendanceReportBaseTestCase):
         self.assertEqual(rows_by_usn["USN000001"]["absent_classes"], 0)
         self.assertEqual(rows_by_usn["USN000001"]["percentage"], 100.0)
 
+    def test_filter_by_course(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(self.report_url, {"course": self.course_1.pk, "generate": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["report_rows"])
+        self.assertEqual({r["course_code"] for r in response.context["report_rows"]}, {"CS101"})
+
+    def test_filter_by_course_and_class_section(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(self.report_url, {"course": self.course_1.pk, "class_section": self.section_1.pk, "generate": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["report_rows"])
+        self.assertEqual({r["class_section_id"] for r in response.context["report_rows"]}, {self.section_1.pk})
+
+    def test_rejects_mismatched_course_and_class_section(self):
+        self.client.force_login(self.admin)
+        r=self.client.get(self.report_url, {"course": self.course_2.pk, "class_section": self.section_1.pk, "generate": "1"})
+        self.assertFalse(r.context["report_rows"])
+        self.assertIn("course", r.context["form"].errors)
+
+    def test_faculty_cannot_filter_by_unassigned_course(self):
+        self.client.force_login(self.faculty_user_1)
+        r=self.client.get(self.report_url, {"course": self.course_2.pk, "generate": "1"})
+        self.assertFalse(r.context["report_rows"])
+        self.assertIn("course", r.context["form"].errors)
+
     def test_filter_by_student_usn(self):
         """[ST-12-05] Report can be filtered by specific Student ID / USN."""
         self.client.force_login(self.admin)

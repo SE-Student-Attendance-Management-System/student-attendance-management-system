@@ -125,6 +125,14 @@ class AttendanceReportForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-control", "id": "id_class_section"}),
         error_messages={"invalid_choice": "Selected class section does not exist."},
     )
+    course = forms.ModelChoiceField(
+        queryset=Course.objects.none(),
+        required=False,
+        empty_label="All Courses",
+        label="Course",
+        widget=forms.Select(attrs={"class": "form-control", "id": "id_course"}),
+        error_messages={"invalid_choice": "Selected course does not exist or is not available to you."},
+    )
     date_from = forms.DateField(
         required=False,
         label="From Date",
@@ -187,6 +195,18 @@ class AttendanceReportForm(forms.Form):
             else:
                 self.fields["class_section"].queryset = ClassSection.objects.none()
 
+        if user and getattr(user, "is_authenticated", False):
+            if user.role == "ADMIN":
+                self.fields["course"].queryset = Course.objects.order_by("course_code")
+            elif user.role == "FACULTY" and hasattr(user, "faculty_profile"):
+                self.fields["course"].queryset = (
+                    Course.objects.filter(
+                        class_sections__faculty=user.faculty_profile
+                    ).distinct().order_by("course_code")
+                )
+            else:
+                self.fields["course"].queryset = Course.objects.none()
+
     def clean_student_id(self):
         student_id = self.cleaned_data.get("student_id", "").strip()
         if not student_id:
@@ -204,9 +224,13 @@ class AttendanceReportForm(forms.Form):
         date_from = cleaned_data.get("date_from")
         date_to = cleaned_data.get("date_to")
         class_section = cleaned_data.get("class_section")
+        course = cleaned_data.get("course")
 
         if date_from and date_to and date_from > date_to:
             self.add_error("date_from", "Start date cannot be after end date.")
+
+        if course and class_section and course.pk != class_section.course_id:
+            self.add_error("course", "Selected course must match the selected class section.")
 
         if self.user and self.user.role == "FACULTY" and class_section:
             if not can_faculty_manage_section(self.user, class_section):

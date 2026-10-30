@@ -8,6 +8,7 @@ from .models import (
     AttendanceRecord,
     AttendanceSession,
     ClassSection,
+    Course,
     Enrollment,
 )
 from .permissions import can_faculty_manage_section
@@ -174,6 +175,7 @@ def generate_attendance_report(
     user,
     *,
     class_section_id=None,
+    course_id=None,
     date_from=None,
     date_to=None,
     student_usn=None,
@@ -247,6 +249,13 @@ def generate_attendance_report(
         sections_qs = ClassSection.objects.filter(pk=target_section.pk)
     else:
         sections_qs = scope_sections
+
+    if course_id is not None:
+        try:
+            course = Course.objects.get(pk=course_id)
+        except (Course.DoesNotExist, ValueError, TypeError):
+            raise ValidationError("Selected course does not exist.")
+        sections_qs = sections_qs.filter(course=course)
 
     # 3. Validate date range criteria
     if date_from and date_to and date_from > date_to:
