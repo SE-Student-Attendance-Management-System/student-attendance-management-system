@@ -9,7 +9,7 @@ A web-based application to manage student information, courses/classes, attendan
 - Centralize attendance records and reduce manual effort.
 - Provide role-based access to student, faculty, and administrator functions.
 - Keep attendance data accurate and prevent duplicate session records.
-- Allow students to access their own attendance history and percentage.
+- Allow students to access their own attendance history and attendance percentage for each enrolled class.
 - Provide authorized users with attendance reports and summaries.
 
 ## User roles
@@ -18,7 +18,7 @@ A web-based application to manage student information, courses/classes, attendan
 |---|---|
 | **Administrator** | Manage student, faculty, and course/class information and authorized system-level records. |
 | **Faculty** | View assigned classes, mark attendance, manage attendance records as permitted, and access relevant reports. |
-| **Student** | View their own attendance records, history, percentage, and relevant summaries. |
+| **Student** | View their own attendance records, history, attendance percentages for each enrolled class, and relevant summaries. |
 
 Access to functions is enforced server-side according to the approved SRS (REQ-02) and business rules (BR-01 to BR-05):
 - **Unauthenticated requests** to protected routes are redirected (HTTP 302) to the login interface with the original target saved in `?next=`.
@@ -38,7 +38,7 @@ The following mapping summarizes the 15 functional requirements in SRS v1.0.
 | Attendance management | REQ-07–REQ-09 | Mark attendance, store status for a session, prevent duplicate records, and allow authorized modification. |
 | Attendance viewing and calculation | REQ-10–REQ-11 | View attendance history and calculate/display attendance percentages. |
 | Attendance reports | REQ-12–REQ-13 | Generate and filter reports by the criteria specified in the SRS. |
-| Dashboard | REQ-14–REQ-15 | Display role-specific dashboards and relevant attendance summaries. |
+| Dashboard | REQ-14–REQ-15 | Display role-specific dashboards with system metrics for Admins, assigned class summaries for Faculty, and independent per-class attendance summaries with 75% threshold status for Students. |
 
 Do not add product features beyond the approved SRS without discussing and documenting the scope change.
 
@@ -135,7 +135,7 @@ Test planning is based on Test Plan v1.1. Testing covers unit, integration, and 
 - Authentication and authorization.
 - Student and course/class management.
 - Attendance marking, duplicate prevention, and authorized modification.
-- Attendance history and percentage calculation.
+- Attendance history and independent per-class percentage calculation.
 - Reports, filters, and dashboards.
 - Security, validation, reliability, and performance targets.
 

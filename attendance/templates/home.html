@@ -13,10 +13,46 @@
     <div class="info-banner" style="border-left-color: #2563eb;">
         <h3>Administrator Dashboard</h3>
         <p>You have system-level management privileges under <strong>Issue #12 (Role-Based Authorization)</strong> and <strong>BR-02</strong>.</p>
-        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+
+        <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1.25rem 0;">
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">{{ admin_metrics.total_students }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Active Students</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">{{ admin_metrics.total_faculty }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Active Faculty</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">{{ admin_metrics.total_courses }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Courses</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">{{ admin_metrics.total_sections }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Class Sections</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">{{ admin_metrics.total_sessions }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Sessions Held</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">{{ admin_metrics.total_records }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Total Records</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e3a8a;">
+                    {% if admin_metrics.overall_attendance_rate is not None %}{{ admin_metrics.overall_attendance_rate }}%{% else %}N/A{% endif %}
+                </div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">System Attendance</div>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 1rem;">Administrative Actions:</h4>
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
             <a href="{% url 'course_list' %}" class="btn btn-primary" id="admin-courses-btn" style="text-decoration: none;">Manage Courses &amp; Class Sections</a>
             <a href="{% url 'student_list' %}" class="btn btn-primary" id="admin-students-btn" style="text-decoration: none;">Manage Student Records</a>
             <a href="{% url 'student_search' %}" class="btn btn-secondary" id="admin-student-search-btn" style="text-decoration: none;">Search Student Records</a>
+            <a href="{% url 'attendance_sessions' %}" class="btn btn-secondary" id="admin-sessions-btn" style="text-decoration: none;">Manage Attendance Sessions</a>
             <a href="{% url 'attendance_report' %}" class="btn btn-secondary" id="admin-attendance-reports-btn" style="text-decoration: none;">Attendance Reports</a>
         </div>
     </div>
@@ -24,17 +60,63 @@
     <div class="info-banner" style="border-left-color: #059669;">
         <h3>Faculty Dashboard</h3>
         <p>You have access to mark and modify attendance for your assigned classes under <strong>BR-03</strong> and <strong>BR-05</strong>.</p>
-        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <a href="{% url 'student_search' %}" class="btn btn-primary" id="faculty-student-search-btn" style="text-decoration: none;">Search Student Records</a>
+
+        <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin: 1.25rem 0;">
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #059669;">{{ faculty_metrics.total_sections }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Assigned Sections</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #059669;">{{ faculty_metrics.total_sessions }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Sessions Conducted</div>
+            </div>
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #059669;">{{ faculty_metrics.total_students }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Enrolled Students</div>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 1rem;">Faculty Actions:</h4>
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="{% url 'attendance_sessions' %}" class="btn btn-primary" id="faculty-sessions-btn" style="text-decoration: none;">Manage Attendance Sessions</a>
+            <a href="{% url 'student_search' %}" class="btn btn-secondary" id="faculty-student-search-btn" style="text-decoration: none;">Search Student Records</a>
             <a href="{% url 'attendance_report' %}" class="btn btn-secondary" id="faculty-attendance-reports-btn" style="text-decoration: none;">Attendance Reports</a>
         </div>
+
         {% if faculty_sections %}
-        <h4 style="margin-top: 1rem;">Your Assigned Class Sections:</h4>
-        <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
-            {% for section in faculty_sections %}
-            <li><strong>{{ section.course.course_code }}</strong> - {{ section.course.course_name }} (Section {{ section.section }}, {{ section.academic_term }})</li>
-            {% endfor %}
-        </ul>
+        <h4 style="margin-top: 1.5rem;">Your Assigned Class Sections:</h4>
+        <div class="table-responsive" style="margin-top: 0.75rem;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0;">
+                        <th style="padding: 0.6rem;">Course</th>
+                        <th style="padding: 0.6rem;">Section &amp; Term</th>
+                        <th style="padding: 0.6rem;">Students</th>
+                        <th style="padding: 0.6rem;">Sessions</th>
+                        <th style="padding: 0.6rem;">Attendance %</th>
+                        <th style="padding: 0.6rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for section in faculty_sections %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 0.6rem;">
+                            <strong>{{ section.course.course_code }}</strong> - {{ section.course.course_name }}
+                        </td>
+                        <td style="padding: 0.6rem;">Section {{ section.section }} ({{ section.academic_term }})</td>
+                        <td style="padding: 0.6rem;">{{ section.enrolled_count }}</td>
+                        <td style="padding: 0.6rem;">{{ section.sessions_count }}</td>
+                        <td style="padding: 0.6rem;">
+                            {% if section.attendance_rate is not None %}{{ section.attendance_rate }}%{% else %}N/A{% endif %}
+                        </td>
+                        <td style="padding: 0.6rem;">
+                            <a href="{% url 'attendance_session_create' section.class_section_id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; text-decoration: none;">Create Session</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
         <p style="margin-top: 0.5rem; color: #64748b;">No class sections currently assigned to your profile.</p>
         {% endif %}
@@ -43,14 +125,72 @@
     <div class="info-banner" style="border-left-color: #d97706;">
         <h3>Student Dashboard</h3>
         <p>You have read-only access to your personal attendance records and attendance history under <strong>BR-04</strong>.</p>
-	<p style="margin-top: 1rem;"><a class="btn btn-primary" href="{% url 'student_attendance_history' %}">View Attendance History</a></p>
-        {% if student_enrollments %}
-        <h4 style="margin-top: 1rem;">Your Enrolled Class Sections:</h4>
-        <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
-            {% for enrollment in student_enrollments %}
-            <li><strong>{{ enrollment.class_section.course.course_code }}</strong> - {{ enrollment.class_section.course.course_name }} (Section {{ enrollment.class_section.section }}, Faculty: {{ enrollment.class_section.faculty.name }})</li>
-            {% endfor %}
-        </ul>
+
+        <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 200px)); gap: 0.75rem; margin: 1.25rem 0;">
+            <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
+                <div style="font-size: 1.6rem; font-weight: 700; color: #d97706;">{{ student_metrics.total_enrolled_courses }}</div>
+                <div style="font-size: 0.8rem; color: #475569; font-weight: 600; margin-top: 0.2rem;">Enrolled Courses</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a class="btn btn-primary" id="student-history-btn" href="{% url 'student_attendance_history' %}" style="text-decoration: none;">View Attendance History</a>
+        </div>
+
+        {% if student_summaries %}
+        <h4 style="margin-top: 1.5rem;">Your Enrolled Class Sections:</h4>
+        <div class="table-responsive" style="margin-top: 0.75rem;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0;">
+                        <th style="padding: 0.6rem;">Course</th>
+                        <th style="padding: 0.6rem;">Section</th>
+                        <th style="padding: 0.6rem;">Faculty</th>
+                        <th style="padding: 0.6rem; text-align: center;">Total</th>
+                        <th style="padding: 0.6rem; text-align: center;">Attended</th>
+                        <th style="padding: 0.6rem; text-align: center;">Absent</th>
+                        <th style="padding: 0.6rem; text-align: right;">Attendance %</th>
+                        <th style="padding: 0.6rem; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in student_summaries %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 0.6rem;">
+                            <strong>{{ item.class_section.course.course_code }}</strong> - {{ item.class_section.course.course_name }}
+                        </td>
+                        <td style="padding: 0.6rem;">Section {{ item.class_section.section }} ({{ item.class_section.academic_term }})</td>
+                        <td style="padding: 0.6rem;">{{ item.class_section.faculty.name }}</td>
+                        <td style="padding: 0.6rem; text-align: center;">{{ item.total_sessions }}</td>
+                        <td style="padding: 0.6rem; text-align: center;">{{ item.attended_sessions }}</td>
+                        <td style="padding: 0.6rem; text-align: center;">{{ item.absent_sessions }}</td>
+                        <td style="padding: 0.6rem; text-align: right; font-weight: 600;">
+                            {% if item.percentage is not None %}
+                                {{ item.percentage|floatformat:1 }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.6rem; text-align: center;">
+                            {% if item.percentage is not None %}
+                                {% if item.is_low_attendance %}
+                                    <span style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                                        Low Attendance (&lt; 75%)
+                                    </span>
+                                {% else %}
+                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                                        Normal (&ge; 75%)
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #64748b; font-size: 0.75rem;">No sessions yet</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
         <p style="margin-top: 0.5rem; color: #64748b;">No course enrollments currently recorded for your profile.</p>
         {% endif %}
