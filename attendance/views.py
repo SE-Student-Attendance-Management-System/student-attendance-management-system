@@ -5,6 +5,7 @@ from .models import (
     AttendanceRecord,
     AttendanceSession,
     Enrollment,
+    Faculty,
     Student,
 )
 from .permissions import can_faculty_manage_section
@@ -31,30 +32,122 @@ from .permissions import admin_required, can_manage_courses
 @login_required
 def home(request):
     """
-    Authenticated landing and role-based dashboard view (Issue #11 & Issue #12).
-    Displays the authenticated user's details, role status, and permitted operations
-    according to their role (Administrator, Faculty, Student).
+    Authenticated landing and role-based dashboard view (Issue #11, #12, #36).
+    Displays the authenticated user's details, role status, permitted operations,
+    and role-specific attendance summaries and metrics (REQ-14, REQ-15, BR-01 to BR-04).
     """
     user = request.user
+    role = getattr(user, "role", None)
+
     context = {
         "user": user,
-        "is_admin": user.role == "ADMIN",
-        "is_faculty": user.role == "FACULTY",
-        "is_student": user.role == "STUDENT",
+        "is_admin": role == "ADMIN",
+        "is_faculty": role == "FACULTY",
+        "is_student": role == "STUDENT",
     }
 
-    if user.role == "FACULTY" and hasattr(user, "faculty_profile") and user.faculty_profile:
-        context["faculty_sections"] = (
-            user.faculty_profile.class_sections.select_related("course").order_by(
-                "course__course_code"
+    if role == "ADMIN":
+        total_students = Student.objects.filter(is_active=True).count()
+        total_faculty = Faculty.objects.filter(is_active=True).count()
+        total_courses = Course.objects.count()
+        total_sections = ClassSection.objects.count()
+        total_sessions = AttendanceSession.objects.count()
+        total_records = AttendanceRecord.objects.count()
+
+        present_records = AttendanceRecord.objects.filter(
+            status=AttendanceRecord.Status.PRESENT
+        ).count()
+
+        overall_attendance_rate = (
+            round(present_records * 100.0 / total_records, 1)
+            if total_records
+            else None
+        )
+
+        context["admin_metrics"] = {
+            "total_students": total_students,
+            "total_faculty": total_faculty,
+            "total_courses": total_courses,
+            "total_sections": total_sections,
+            "total_sessions": total_sessions,
+            "total_records": total_records,
+            "overall_attendance_rate": overall_attendance_rate,
+        }
+
+    elif role == "FACULTY":
+        faculty_sections = []
+        total_faculty_sessions = 0
+        distinct_students = set()
+
+        if hasattr(user, "faculty_profile") and user.faculty_profile:
+            sections_qs = (
+                user.faculty_profile.class_sections.select_related("course")
+                .order_by("course__course_code", "section", "academic_term")
             )
-        )
-    elif user.role == "STUDENT" and hasattr(user, "student_profile") and user.student_profile:
-        context["student_enrollments"] = (
-            user.student_profile.enrollments.select_related(
-                "class_section__course", "class_section__faculty"
-            ).order_by("class_section__course__course_code")
-        )
+
+            for sec in sections_qs:
+                enrolled_count = sec.enrollments.filter(student__is_active=True).count()
+                for sid in sec.enrollments.filter(student__is_active=True).values_list("student_id", flat=True):
+                    distinct_students.add(sid)
+
+                sessions_count = sec.attendance_sessions.count()
+                total_faculty_sessions += sessions_count
+
+                sec_records = AttendanceRecord.objects.filter(session__class_section=sec)
+                sec_total_records = sec_records.count()
+                sec_present_records = sec_records.filter(status=AttendanceRecord.Status.PRESENT).count()
+
+                sec_rate = (
+                    round(sec_present_records * 100.0 / sec_total_records, 1)
+                    if sec_total_records
+                    else None
+                )
+
+                sec.enrolled_count = enrolled_count
+                sec.sessions_count = sessions_count
+                sec.attendance_rate = sec_rate
+                faculty_sections.append(sec)
+
+        context["faculty_sections"] = faculty_sections
+        context["faculty_metrics"] = {
+            "total_sections": len(faculty_sections),
+            "total_sessions": total_faculty_sessions,
+            "total_students": len(distinct_students),
+        }
+
+    elif role == "STUDENT":
+        student_summaries = []
+
+        if hasattr(user, "student_profile") and user.student_profile:
+            student = user.student_profile
+            raw_summaries = calculate_attendance_percentages(student=student)
+
+            for s in raw_summaries:
+                total = s["total_sessions"]
+                attended = s["attended_sessions"]
+                absent = total - attended
+                pct = s["percentage"]
+                is_low_attendance = (pct is not None and pct < 75.0)
+
+                student_summaries.append({
+                    "class_section": s["class_section"],
+                    "total_sessions": total,
+                    "attended_sessions": attended,
+                    "absent_sessions": absent,
+                    "percentage": pct,
+                    "is_low_attendance": is_low_attendance,
+                })
+
+            context["student_enrollments"] = (
+                student.enrollments.select_related(
+                    "class_section__course", "class_section__faculty"
+                ).order_by("class_section__course__course_code")
+            )
+
+        context["student_summaries"] = student_summaries
+        context["student_metrics"] = {
+            "total_enrolled_courses": len(student_summaries),
+        }
 
     return render(request, "home.html", context)
 
@@ -250,11 +343,15 @@ def student_attendance_history(request):
 @login_required
 def attendance_sessions(request):
     """List attendance sessions the current user is allowed to manage."""
+    admin_sections = None
     if request.user.role == "ADMIN":
         sessions = AttendanceSession.objects.select_related(
             "class_section__course",
             "class_section__faculty",
         ).order_by("-session_date", "session_no")
+        admin_sections = ClassSection.objects.select_related(
+            "course", "faculty"
+        ).order_by("course__course_code", "section", "academic_term")
     elif request.user.role == "FACULTY":
         sessions = AttendanceSession.objects.filter(
             class_section__faculty__user=request.user,
@@ -270,7 +367,10 @@ def attendance_sessions(request):
     return render(
         request,
         "attendance/attendance_sessions.html",
-        {"sessions": sessions},
+        {
+            "sessions": sessions,
+            "admin_sections": admin_sections,
+        },
     )
 
 
@@ -425,12 +525,9 @@ def attendance_mark(request, session_pk):
 
         return redirect("attendance_mark", session_pk=session.session_id)
 
-        records = AttendanceRecord.objects.filter(
+    records = AttendanceRecord.objects.filter(
         session=session,
     ).select_related("student").order_by("student__usn")
-    records = AttendanceRecord.objects.filter(
-    session=session,
-).select_related("student").order_by("student__usn")
     recorded_student_ids = set(
         records.values_list("student_id", flat=True)
     )
