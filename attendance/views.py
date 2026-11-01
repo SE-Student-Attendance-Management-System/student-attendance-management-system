@@ -1,5 +1,5 @@
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError
+from django.db import DatabaseError, IntegrityError, transaction
 from django.views.decorators.http import require_GET
 from .models import (
     AttendanceRecord,
@@ -510,6 +510,13 @@ def attendance_mark(request, session_pk):
             except ValidationError as exc:
                 messages.error(request, str(exc))
 
+            except DatabaseError:
+                messages.error(
+                    request,
+                    "Unable to mark attendance due to a database error. "
+                    "No changes were saved. Please try again.",
+                )
+
         if marked_count:
             messages.success(
                 request,
@@ -591,6 +598,13 @@ def attendance_update(request, attendance_pk):
                 )
             except ValidationError as exc:
                 messages.error(request, str(exc))
+
+            except DatabaseError:
+                messages.error(
+                    request,
+                    "Unable to update attendance due to a database error. "
+                    "No changes were saved. Please try again.",
+                )
 
     return render(
         request,

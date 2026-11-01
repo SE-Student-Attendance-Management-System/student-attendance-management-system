@@ -1,9 +1,11 @@
 import time
-
+from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.db import IntegrityError, transaction, close_old_connections
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 from .models import (
@@ -153,6 +155,50 @@ class AttendanceServiceTests(TestCase):
         )
         self.assertEqual(audit.changed_by, self.faculty_user)
 
+
+    def test_mark_attendance_rolls_back_on_database_failure(self):
+        with patch(
+            "attendance.services.AttendanceRecord.objects.create",
+            side_effect=IntegrityError("Simulated database failure"),
+        ):
+            with self.assertRaises(IntegrityError):
+                mark_attendance(
+                    session_id=self.session.pk,
+                    student_id=self.student.pk,
+                    status=AttendanceRecord.Status.PRESENT,
+                    marked_by=self.faculty_user,
+                )
+
+        self.assertEqual(AttendanceRecord.objects.count(), 0)
+
+    def test_update_attendance_rolls_back_if_audit_creation_fails(self):
+        record = AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+
+        with patch(
+            "attendance.services.AttendanceAudit.objects.create",
+            side_effect=IntegrityError("Simulated audit database failure"),
+        ):
+            with self.assertRaises(IntegrityError):
+                update_attendance(
+                    attendance_id=record.pk,
+                    status=AttendanceRecord.Status.ABSENT,
+                    changed_by=self.faculty_user,
+                )
+
+        record.refresh_from_db()
+
+        self.assertEqual(
+            record.status,
+            AttendanceRecord.Status.PRESENT,
+        )
+        self.assertIsNone(record.modified_at)
+        self.assertEqual(AttendanceAudit.objects.count(), 0)
+
     def test_duplicate_attendance_is_rejected(self):
         AttendanceRecord.objects.create(
             session=self.session,
@@ -173,7 +219,47 @@ class AttendanceServiceTests(TestCase):
                 )
 
         self.assertEqual(AttendanceRecord.objects.count(), 1)
+    def test_update_view_handles_database_failure_safely(self):
+        from django.contrib.messages import get_messages
 
+        record = AttendanceRecord.objects.create(
+            session=self.session,
+            student=self.student,
+            status=AttendanceRecord.Status.PRESENT,
+            marked_by=self.faculty_user,
+        )
+
+        self.client.force_login(self.faculty_user)
+
+        with patch(
+            "attendance.views.update_attendance",
+            side_effect=IntegrityError("Sensitive database details"),
+        ):
+            response = self.client.post(
+                reverse(
+                    "attendance_update",
+                    kwargs={"attendance_pk": record.pk},
+                ),
+                {"status": AttendanceRecord.Status.ABSENT},
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        record.refresh_from_db()
+        self.assertEqual(record.status, AttendanceRecord.Status.PRESENT)
+        self.assertEqual(AttendanceAudit.objects.count(), 0)
+
+        messages_list = [
+            str(message)
+            for message in get_messages(response.wsgi_request)
+        ]
+
+        self.assertTrue(
+            any("Unable to update attendance" in message for message in messages_list)
+        )
+        self.assertFalse(
+            any("Sensitive database details" in message for message in messages_list)
+        )
     def test_unassigned_faculty_cannot_mark_attendance(self):
         other_user = User.objects.create_user(
             username="faculty2",
@@ -777,3 +863,98 @@ class StudentAttendanceHistoryTests(TestCase):
 
         self.assertEqual(summaries[self.section.pk]["percentage"], 100)
         self.assertEqual(summaries[other_section.pk]["percentage"], 0)
+class AttendanceConcurrencyTests(TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        faculty_user = User.objects.create_user(
+            username="concurrent_faculty",
+            password="test-password-123",
+            role=User.Role.FACULTY,
+        )
+        student_user = User.objects.create_user(
+            username="concurrent_student",
+            password="test-password-123",
+            role=User.Role.STUDENT,
+        )
+
+        self.student = Student.objects.create(
+            usn="CONCURRENT001",
+            user=student_user,
+            name="Concurrent Student",
+            email="concurrent@example.com",
+            program="CSE",
+            semester=3,
+        )
+
+        faculty = Faculty.objects.create(
+            faculty_code="CONCURRENT_FAC",
+            user=faculty_user,
+            name="Concurrent Faculty",
+            email="concurrent_faculty@example.com",
+            department="CSE",
+        )
+
+        course = Course.objects.create(
+            course_code="CONC101",
+            course_name="Concurrency Test Course",
+            semester=3,
+        )
+
+        section = ClassSection.objects.create(
+            course=course,
+            faculty=faculty,
+            section="A",
+            academic_term="2026-27",
+        )
+
+        self.session = AttendanceSession.objects.create(
+            class_section=section,
+            session_date="2026-10-22",
+            session_no=1,
+        )
+
+        Enrollment.objects.create(
+            student=self.student,
+            class_section=section,
+        )
+
+        self.faculty_user_id = faculty_user.pk
+
+    def test_concurrent_duplicate_attendance_creates_only_one_record(self):
+        barrier = Barrier(2)
+
+        def attempt_marking():
+            close_old_connections()
+            try:
+                faculty_user = User.objects.get(pk=self.faculty_user_id)
+                barrier.wait(timeout=15)
+
+                try:
+                    mark_attendance(
+                        session_id=self.session.pk,
+                        student_id=self.student.pk,
+                        status=AttendanceRecord.Status.PRESENT,
+                        marked_by=faculty_user,
+                    )
+                    return "created"
+                except IntegrityError:
+                    return "duplicate"
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [
+                executor.submit(attempt_marking),
+                executor.submit(attempt_marking),
+            ]
+            results = [future.result(timeout=30) for future in futures]
+
+        self.assertCountEqual(results, ["created", "duplicate"])
+        self.assertEqual(
+            AttendanceRecord.objects.filter(
+                session=self.session,
+                student=self.student,
+            ).count(),
+            1,
+        )
