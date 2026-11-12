@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
@@ -12,13 +13,23 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ["usn", "name", "email", "phone", "program", "semester"]
         widgets = {
-            "usn": forms.TextInput(attrs={"maxlength": 15, "autocomplete": "off"}),
+            "usn": forms.TextInput(
+                attrs={
+                    "maxlength": 15,
+                    "placeholder": "e.g. PESUG24CS001",
+                    "autocomplete": "off",
+                }
+            ),
             "name": forms.TextInput(attrs={"maxlength": 100}),
             "email": forms.EmailInput(attrs={"maxlength": 100}),
             "phone": forms.TextInput(attrs={"maxlength": 15, "inputmode": "tel"}),
             "program": forms.TextInput(attrs={"maxlength": 50}),
             "semester": forms.NumberInput(attrs={"min": 1, "max": 99}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["usn"].help_text = "Format: PESUG24CSXXX (e.g., PESUG24CS001)"
 
     def clean_usn(self):
         usn = self.cleaned_data["usn"].strip()
@@ -29,6 +40,10 @@ class StudentForm(forms.ModelForm):
         if not usn.isascii() or not usn.isalnum():
             raise forms.ValidationError(
                 "Student ID / USN must contain only English letters and numbers."
+            )
+        if not re.match(r"^PESUG24CS[0-9]{3}$", usn):
+            raise forms.ValidationError(
+                "Enter a valid USN in the format PESUG24CSXXX (e.g., PESUG24CS001)."
             )
 
         duplicates = Student.objects.filter(usn__iexact=usn)
@@ -129,9 +144,10 @@ class StudentSearchForm(forms.Form):
             return cleaned_data
 
         if search_by == "usn":
-            if len(query) > 15:
+            cleaned_query = query.strip()
+            if len(cleaned_query) > 15:
                 self.add_error("query", "Student ID / USN must be at most 15 characters.")
-            elif not query.isascii() or not query.isalnum():
+            elif not cleaned_query.isascii() or not cleaned_query.isalnum():
                 self.add_error(
                     "query",
                     "Student ID / USN must contain only English letters and numbers.",

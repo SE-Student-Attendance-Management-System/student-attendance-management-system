@@ -165,7 +165,7 @@ class AttendanceReportForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "e.g. USN001",
+                "placeholder": "e.g. PESUG24CS001",
                 "autocomplete": "off",
                 "id": "id_student_id",
             }

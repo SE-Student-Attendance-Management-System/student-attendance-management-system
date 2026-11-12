@@ -43,17 +43,26 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-# Database configuration: PostgreSQL.
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "student_attendance"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+# Database configuration: PostgreSQL by default, with environment-configurable engine for local development.
+DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
+if "sqlite" in DB_ENGINE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "student_attendance"),
+            "USER": os.getenv("DB_USER", "postgres"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
+    }
 
 # Application definition.
 INSTALLED_APPS = [

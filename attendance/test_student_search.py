@@ -19,7 +19,7 @@ class StudentSearchAndDetailTests(TestCase):
             username="search_student", password="test-password-123", role=User.Role.STUDENT
         )
         self.student = Student.objects.create(
-            usn="USN150001",
+            usn="PESUG24CS001",
             name="John Smith",
             email="john.search@example.test",
             phone="9876501234",
@@ -27,14 +27,14 @@ class StudentSearchAndDetailTests(TestCase):
             semester=5,
         )
         self.same_name_student = Student.objects.create(
-            usn="USN150002",
+            usn="PESUG24CS002",
             name="John Smith",
             email="john.second@example.test",
             program="ECE",
             semester=3,
         )
         self.other_student = Student.objects.create(
-            usn="USN150003",
+            usn="PESUG24CS003",
             name="Alice Example",
             email="alice.search@example.test",
             program="CSE",
@@ -112,7 +112,7 @@ class StudentSearchAndDetailTests(TestCase):
 
     def test_partial_usn_does_not_return_a_record(self):
         self.client.force_login(self.admin)
-        response = self.search("USN15000")
+        response = self.search("PESUG24CS00")
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["not_found"])

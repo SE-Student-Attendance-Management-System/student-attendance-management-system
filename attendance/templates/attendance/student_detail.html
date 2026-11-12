@@ -2,30 +2,70 @@
 {% block title %}Student Details | SAMS{% endblock %}
 {% block content %}
 <section class="content-section" aria-labelledby="student-detail-heading">
-    <div class="section-header">
-        <h1 id="student-detail-heading">Student Details</h1>
-        <div>
-            <a class="btn btn-secondary" href="{% url 'student_search' %}">Search another student</a>
-            {% if user.role == "ADMIN" %}<a class="btn btn-primary" href="{% url 'student_update' student.pk %}">Edit student</a>{% endif %}
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <div class="section-header">
+            <div>
+                <h1 id="student-detail-heading">Student Profile Details</h1>
+                <p style="color: var(--slate-600); margin: 0.25rem 0 0 0;">
+                    Profile for <strong>{{ student.name }}</strong> ({{ student.usn }})
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a class="btn btn-secondary" href="{% url 'student_search' %}">Search another student</a>
+                {% if user.role == "ADMIN" %}
+                    <a class="btn btn-primary" href="{% url 'student_update' student.pk %}">Edit student</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <tbody>
+                    <tr>
+                        <th scope="row" style="width: 30%; background: var(--slate-50);">Student ID / USN</th>
+                        <td><strong>{{ student.usn }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th scope="row" style="background: var(--slate-50);">Student name</th>
+                        <td>{{ student.name }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" style="background: var(--slate-50);">Email</th>
+                        <td>{{ student.email }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" style="background: var(--slate-50);">Phone</th>
+                        <td>{{ student.phone|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" style="background: var(--slate-50);">Course / Program</th>
+                        <td>{{ student.program }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" style="background: var(--slate-50);">Semester</th>
+                        <td>Semester {{ student.semester }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" style="background: var(--slate-50);">Record status</th>
+                        <td>
+                            {% if student.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+            {% if user.role == "ADMIN" %}
+                <a class="btn btn-secondary" href="{% url 'student_list' %}">&larr; Back to student records</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{% url 'home' %}">&larr; Back to dashboard</a>
+            {% endif %}
         </div>
     </div>
-    <div class="table-responsive">
-        <table>
-            <tbody>
-                <tr><th scope="row">Student ID / USN</th><td>{{ student.usn }}</td></tr>
-                <tr><th scope="row">Student name</th><td>{{ student.name }}</td></tr>
-                <tr><th scope="row">Email</th><td>{{ student.email }}</td></tr>
-                <tr><th scope="row">Phone</th><td>{{ student.phone|default:"Not provided" }}</td></tr>
-                <tr><th scope="row">Course / Program</th><td>{{ student.program }}</td></tr>
-                <tr><th scope="row">Semester</th><td>{{ student.semester }}</td></tr>
-                <tr><th scope="row">Record status</th><td>{% if student.is_active %}Active{% else %}Inactive{% endif %}</td></tr>
-            </tbody>
-        </table>
-    </div>
-    {% if user.role == "ADMIN" %}
-        <p><a class="btn btn-secondary" href="{% url 'student_list' %}">Back to student records</a></p>
-    {% else %}
-        <p><a class="btn btn-secondary" href="{% url 'home' %}">Back to dashboard</a></p>
-    {% endif %}
 </section>
 {% endblock %}

@@ -10,7 +10,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <header>
+    <header class="site-header">
         <nav class="navbar" aria-label="Main Navigation">
             <a href="{% url 'home' %}" class="navbar-brand">
                 <span>Student Attendance Management System</span>
@@ -29,6 +29,26 @@
                 {% endif %}
             </div>
         </nav>
+        {% if user.is_authenticated %}
+        <nav class="subnav" aria-label="Role Navigation">
+            <div class="subnav-container">
+                <a href="{% url 'home' %}" class="subnav-link">Dashboard</a>
+                {% if user.role == "ADMIN" %}
+                    <a href="{% url 'course_list' %}" class="subnav-link">Courses &amp; Sections</a>
+                    <a href="{% url 'student_list' %}" class="subnav-link">Students</a>
+                    <a href="{% url 'student_search' %}" class="subnav-link">Search Students</a>
+                    <a href="{% url 'attendance_sessions' %}" class="subnav-link">Attendance</a>
+                    <a href="{% url 'attendance_report' %}" class="subnav-link">Reports</a>
+                {% elif user.role == "FACULTY" %}
+                    <a href="{% url 'attendance_sessions' %}" class="subnav-link">Attendance Sessions</a>
+                    <a href="{% url 'student_search' %}" class="subnav-link">Search Students</a>
+                    <a href="{% url 'attendance_report' %}" class="subnav-link">Reports</a>
+                {% elif user.role == "STUDENT" %}
+                    <a href="{% url 'student_attendance_history' %}" class="subnav-link">My Attendance History</a>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
     </header>
 
     <main class="main-container">

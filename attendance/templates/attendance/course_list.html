@@ -1,55 +1,79 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses</title>
-</head>
-<body>
-    <h1>Course Management</h1>
+{% block title %}Course Management - SAMS{% endblock %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
+{% block content %}
+<section class="content-section" aria-labelledby="courses-heading">
+    <div class="card">
+        <div class="section-header">
+            <div>
+                <h1 id="courses-heading">Course Management</h1>
+                <p style="color: var(--slate-600); margin: 0.25rem 0 0 0;">
+                    Manage courses, class sections, and faculty assignments (REQ-06, REQ-07, REQ-08).
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'course_create' %}" class="btn btn-primary" id="btn-create-course">+ Create New Course</a>
+            </div>
+        </div>
 
-    <p><a href="{% url 'course_create' %}">Create New Course</a></p>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
-    {% if courses %}
-        <table border="1" cellpadding="8">
-            <thead>
-                <tr>
-                    <th>Course ID</th>
-                    <th>Course Name</th>
-                    <th>Semester</th>
-                    <th>Faculty</th>
-                    <th>Section</th>
-                    <th>Academic Term</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for course in courses %}
-                    {% for section in course.class_sections.all %}
+        {% if courses %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
                         <tr>
-                            <td>{{ course.course_code }}</td>
-                            <td>{{ course.course_name }}</td>
-                            <td>{{ course.semester }}</td>
-                            <td>{{ section.faculty.name }}</td>
-                            <td>{{ section.section }}</td>
-                            <td>{{ section.academic_term }}</td>
-                            <td>
-                                <a href="{% url 'section_update' course.pk section.pk %}">Edit</a>
-                            </td>
+                            <th scope="col">Course Code</th>
+                            <th scope="col">Course Name</th>
+                            <th scope="col">Semester</th>
+                            <th scope="col">Faculty</th>
+                            <th scope="col">Section</th>
+                            <th scope="col">Academic Term</th>
+                            <th scope="col">Actions</th>
                         </tr>
-                    {% endfor %}
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No courses have been created yet.</p>
-    {% endif %}
-</body>
-</html>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                            {% for section in course.class_sections.all %}
+                                <tr>
+                                    <td><strong>{{ course.course_code }}</strong></td>
+                                    <td>{{ course.course_name }}</td>
+                                    <td>{{ course.semester }}</td>
+                                    <td>{{ section.faculty.name|default:"Unassigned" }}</td>
+                                    <td>{{ section.section }}</td>
+                                    <td>{{ section.academic_term }}</td>
+                                    <td>
+                                        <a href="{% url 'section_update' course.pk section.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td><strong>{{ course.course_code }}</strong></td>
+                                    <td>{{ course.course_name }}</td>
+                                    <td>{{ course.semester }}</td>
+                                    <td colspan="3" style="color: var(--slate-500); font-style: italic;">No class sections created</td>
+                                    <td>
+                                        <a href="{% url 'course_update' course.pk %}" class="btn btn-secondary btn-sm">Edit Course</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p style="margin: 0; font-size: 1rem;">No courses have been created yet.</p>
+                <p style="margin: 0.75rem 0 0 0;">
+                    <a href="{% url 'course_create' %}" class="btn btn-primary btn-sm">Create First Course</a>
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,86 +1,113 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Mark Attendance - SAMS{% endblock %}
 
 {% block content %}
-<h1>Mark Attendance</h1>
-
-<h2>
-    {{ session.class_section.course.course_code }}
-    — Section {{ session.class_section.section }}
-</h2>
-
-<p>Date: {{ session.session_date }} | Session: {{ session.session_no }}</p>
-
-{% if messages %}
-    {% for message in messages %}
-        <p class="message {{ message.tags }}">{{ message }}</p>
-    {% endfor %}
-{% endif %}
-
-<h2>Existing Attendance Records</h2>
-
-<table>
-    <thead>
-        <tr>
-            <th>USN</th>
-            <th>Student</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for record in attendance_records %}
-        <tr>
-            <td>{{ record.student.usn }}</td>
-            <td>{{ record.student.name }}</td>
-            <td>{{ record.get_status_display }}</td>
-            <td>
-                <a href="{% url 'attendance_update' record.attendance_id %}">
-                    Edit
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="4">No attendance records have been created.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<h2>Mark Unrecorded Students</h2>
-
-<form method="post">
-    {% csrf_token %}
-
-    {% for student in unmarked_students %}
-        <div>
-            <label for="status_{{ student.student_id }}">
-                {{ student.usn }} — {{ student.name }}
-            </label>
-
-            <select
-                id="status_{{ student.student_id }}"
-                name="status_{{ student.student_id }}"
-                required
-            >
-                <option value="">Select status</option>
-                {% for value, label in status_choices %}
-                    <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-            </select>
+<section class="content-section" aria-labelledby="mark-attendance-heading">
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="section-header">
+            <div>
+                <h1 id="mark-attendance-heading">Mark Attendance</h1>
+                <p style="color: var(--slate-600); margin: 0.25rem 0 0 0;">
+                    <strong>{{ session.class_section.course.course_code }}</strong> — Section {{ session.class_section.section }} &bull; Date: {{ session.session_date }} &bull; Session #{{ session.session_no }}
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'attendance_sessions' %}" class="btn btn-secondary">&larr; Back to Sessions</a>
+            </div>
         </div>
-    {% empty %}
-        <p>All enrolled students already have attendance records.</p>
-    {% endfor %}
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <h2 style="margin-top: 0.5rem; margin-bottom: 0.75rem;">Recorded Attendance ({{ attendance_records|length }})</h2>
+        {% if attendance_records %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Student ID / USN</th>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                            <tr>
+                                <td><strong>{{ record.student.usn }}</strong></td>
+                                <td>{{ record.student.name }}</td>
+                                <td>
+                                    {% if record.status == "PRESENT" %}
+                                        <span class="badge badge-success">Present</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Absent</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'attendance_update' record.attendance_id %}" class="btn btn-secondary btn-sm">Edit Status</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p style="margin: 0;">No attendance records have been created yet for this session.</p>
+            </div>
+        {% endif %}
+    </div>
 
     {% if unmarked_students %}
-        <button type="submit">Submit Attendance</button>
-    {% endif %}
-</form>
+    <div class="card">
+        <h2 style="margin-top: 0; margin-bottom: 0.5rem;">Mark Unrecorded Students ({{ unmarked_students|length }})</h2>
+        <p style="color: var(--slate-600); margin-bottom: 1.25rem;">Select status for all remaining enrolled students:</p>
 
-<p>
-    <a href="{% url 'attendance_sessions' %}">Back to sessions</a>
-</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Student ID / USN</th>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Attendance Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in unmarked_students %}
+                            <tr>
+                                <td><strong>{{ student.usn }}</strong></td>
+                                <td>{{ student.name }}</td>
+                                <td>
+                                    <select
+                                        id="status_{{ student.student_id }}"
+                                        name="status_{{ student.student_id }}"
+                                        class="form-control"
+                                        style="max-width: 220px;"
+                                        required
+                                    >
+                                        <option value="">Select status</option>
+                                        {% for value, label in status_choices %}
+                                            <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 1.25rem;">
+                <button type="submit" class="btn btn-primary">Submit Attendance Records</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</section>
 {% endblock %}

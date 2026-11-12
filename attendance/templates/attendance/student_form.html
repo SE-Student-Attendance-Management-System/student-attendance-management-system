@@ -2,27 +2,44 @@
 {% block title %}{{ page_title }} | SAMS{% endblock %}
 {% block content %}
 <section class="content-section" aria-labelledby="student-form-heading">
-    <div class="section-header">
-        <h1 id="student-form-heading">{{ page_title }}</h1>
-        <a class="btn btn-secondary" href="{% url 'student_list' %}">Back to students</a>
-    </div>
-    {% if messages %}
-        {% for message in messages %}<p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>{% endfor %}
-    {% endif %}
-    <form method="post" novalidate>
-        {% csrf_token %}
-        {% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
-        <div class="form-grid">
-        {% for field in form %}
-            <div class="form-field">
-                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
-                {{ field }}
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                {% if field.errors %}<div class="form-errors" role="alert">{{ field.errors }}</div>{% endif %}
-            </div>
-        {% endfor %}
+    <div class="card" style="max-width: 750px; margin: 0 auto;">
+        <div class="section-header">
+            <h1 id="student-form-heading">{{ page_title }}</h1>
+            <a class="btn btn-secondary" href="{% url 'student_list' %}">&larr; Back to Students</a>
         </div>
-        <button class="btn btn-primary" type="submit">{{ submit_label }}</button>
-    </form>
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-grid">
+            {% for field in form %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}{% if field.field.required %} <span style="color: var(--danger-text);">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% if field.errors %}
+                        <div class="form-errors" role="alert">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button class="btn btn-primary" type="submit">{{ submit_label }}</button>
+                <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </section>
 {% endblock %}

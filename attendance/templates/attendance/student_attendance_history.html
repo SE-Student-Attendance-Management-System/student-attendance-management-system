@@ -1,93 +1,105 @@
 {% extends "base.html" %}
 
-{% block title %}Attendance History - SAMS{% endblock %}
+{% block title %}My Attendance History - SAMS{% endblock %}
 
 {% block content %}
-<section class="content-section">
-    <h1>My Attendance History</h1>
-    <p>
-        Student: <strong>{{ student.name }}</strong>
-        ({{ student.usn }})
-    </p>
-<h2>Attendance Percentage by Class</h2>
+<section class="content-section" aria-labelledby="history-heading">
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="section-header">
+            <div>
+                <h1 id="history-heading">My Attendance History</h1>
+                <p style="color: var(--slate-600); margin: 0.25rem 0 0 0;">
+                    Student: <strong>{{ student.name }}</strong> ({{ student.usn }}) &bull; Program: {{ student.program }} (Sem {{ student.semester }})
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'home' %}" class="btn btn-secondary">&larr; Back to Dashboard</a>
+            </div>
+        </div>
 
-{% if attendance_summaries %}
-<div class="table-responsive">
-    <table>
-        <thead>
-            <tr>
-                <th>Course</th>
-                <th>Section</th>
-                <th>Academic Term</th>
-                <th>Present / Recorded Sessions</th>
-                <th>Attendance Percentage</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for summary in attendance_summaries %}
-            <tr>
-                <td>
-                    {{ summary.class_section.course.course_code }}
-                    - {{ summary.class_section.course.course_name }}
-                </td>
-                <td>{{ summary.class_section.section }}</td>
-                <td>{{ summary.class_section.academic_term }}</td>
-                <td>
-                    {{ summary.attended_sessions }}
-                    / {{ summary.total_sessions }}
-                </td>
-                <td>
-                    {% if summary.total_sessions %}
-                        {{ summary.percentage|floatformat:2 }}%
-                    {% else %}
-                        No attendance records yet
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<p>No class sections available to calculate attendance.</p>
-{% endif %}
-
-    {% if records %}
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Course</th>
-                    <th>Section</th>
-                    <th>Date</th>
-                    <th>Session</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in records %}
-                <tr>
-                    <td>
-                        {{ record.session.class_section.course.course_code }}
-                        - {{ record.session.class_section.course.course_name }}
-                    </td>
-                    <td>{{ record.session.class_section.section }}</td>
-                    <td>{{ record.session.session_date|date:"d M Y" }}</td>
-                    <td>{{ record.session.session_no }}</td>
-                    <td>{{ record.get_status_display }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <h2 style="margin-top: 0.5rem; margin-bottom: 0.75rem;">Attendance Percentage by Class</h2>
+        {% if attendance_summaries %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Course</th>
+                            <th scope="col">Section</th>
+                            <th scope="col">Academic Term</th>
+                            <th scope="col">Present / Recorded Sessions</th>
+                            <th scope="col">Attendance Percentage</th>
+                            <th scope="col">Standing</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for summary in attendance_summaries %}
+                            <tr>
+                                <td><strong>{{ summary.class_section.course.course_code }}</strong> — {{ summary.class_section.course.course_name }}</td>
+                                <td>{{ summary.class_section.section }}</td>
+                                <td>{{ summary.class_section.academic_term }}</td>
+                                <td>{{ summary.attended_sessions }} / {{ summary.total_sessions }}</td>
+                                <td>
+                                    {% if summary.total_sessions %}
+                                        <strong>{{ summary.percentage|floatformat:2 }}%</strong>
+                                    {% else %}
+                                        <span style="color: var(--slate-500);">No attendance records yet</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if summary.total_sessions == 0 %}
+                                        <span class="badge badge-secondary">No Sessions Held</span>
+                                    {% elif summary.percentage >= 75.0 %}
+                                        <span class="badge badge-success">Good Standing</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Low Attendance</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-state">No class sections available to calculate attendance.</p>
+        {% endif %}
     </div>
-    {% else %}
-    <p>No attendance records found.</p>
-    {% endif %}
 
-    <p>
-        <a class="btn btn-secondary" href="{% url 'home' %}">
-            Back to dashboard
-        </a>
-    </p>
+    <div class="card">
+        <h2 style="margin-top: 0; margin-bottom: 0.75rem;">Detailed Session Attendance Logs</h2>
+        {% if records %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Course</th>
+                            <th scope="col">Section</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Session #</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                            <tr>
+                                <td><strong>{{ record.session.class_section.course.course_code }}</strong> — {{ record.session.class_section.course.course_name }}</td>
+                                <td>{{ record.session.class_section.section }}</td>
+                                <td>{{ record.session.session_date|date:"d M Y" }}</td>
+                                <td>Session {{ record.session.session_no }}</td>
+                                <td>
+                                    {% if record.status == "PRESENT" %}
+                                        <span class="badge badge-success">Present</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Absent</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-state">No attendance records found.</p>
+        {% endif %}
+    </div>
 </section>
 {% endblock %}

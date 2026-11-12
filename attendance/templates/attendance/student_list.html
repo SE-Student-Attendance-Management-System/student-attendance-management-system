@@ -2,56 +2,81 @@
 {% block title %}Student Records | SAMS{% endblock %}
 {% block content %}
 <section class="content-section" aria-labelledby="student-list-heading">
-    <div class="section-header">
-        <h1 id="student-list-heading">Student Records</h1>
-        <a class="btn btn-primary" href="{% url 'student_create' %}">Add student</a>
-    </div>
-    {% if messages %}
-        {% for message in messages %}<p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>{% endfor %}
-    {% endif %}
-
-    <section class="content-section" aria-labelledby="student-search-heading">
-        <h2 id="student-search-heading">Find a student</h2>
-        <form method="get" action="{% url 'student_search' %}" class="form-grid">
-            <div class="form-field">
-                <label for="student-list-search-by">Search by</label>
-                <select id="student-list-search-by" name="search_by" required>
-                    <option value="usn">Student ID / USN</option>
-                    <option value="name">Student Name</option>
-                </select>
+    <div class="card">
+        <div class="section-header">
+            <div>
+                <h1 id="student-list-heading">Student Records</h1>
+                <p style="color: var(--slate-600); margin: 0.25rem 0 0 0;">
+                    Manage student profiles and academic enrollments (REQ-03, REQ-04, REQ-05).
+                </p>
             </div>
-            <div class="form-field">
-                <label for="student-list-query">Search value</label>
-                <input id="student-list-query" type="text" name="query" maxlength="100"
-                       autocomplete="off" aria-describedby="student-list-query-help" required>
-                <small id="student-list-query-help">USN searches require the full identifier; name searches can return multiple matches.</small>
+            <div>
+                <a class="btn btn-primary" href="{% url 'student_create' %}">+ Add Student</a>
             </div>
-            <div class="form-field">
-                <button class="btn btn-primary" type="submit">Search student</button>
-            </div>
-        </form>
-    </section>
-
-    {% if students %}
-        <div class="table-responsive">
-            <table>
-                <thead><tr><th>USN</th><th>Name</th><th>Email</th><th>Program</th><th>Semester</th><th>Actions</th></tr></thead>
-                <tbody>
-                {% for student in students %}
-                    <tr>
-                        <td>{{ student.usn }}</td><td>{{ student.name }}</td><td>{{ student.email }}</td>
-                        <td>{{ student.program }}</td><td>{{ student.semester }}</td>
-                        <td>
-                            <a class="btn btn-secondary" href="{% url 'student_detail' student.pk %}">View</a>
-                            <a class="btn btn-secondary" href="{% url 'student_update' student.pk %}">Edit</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
         </div>
-    {% else %}
-        <p class="empty-state">No student records found.</p>
-    {% endif %}
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="message message-{{ message.tags|default:'info' }}" role="status">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem;">
+            <h3 id="student-search-heading" style="margin-top: 0; margin-bottom: 0.75rem;">Find a Student</h3>
+            <form method="get" action="{% url 'student_search' %}" class="form-grid" style="align-items: flex-end; margin-bottom: 0;">
+                <div class="form-field">
+                    <label for="student-list-search-by">Search by</label>
+                    <select id="student-list-search-by" name="search_by" required>
+                        <option value="usn">Student ID / USN</option>
+                        <option value="name">Student Name</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="student-list-query">Search value</label>
+                    <input id="student-list-query" type="text" name="query" maxlength="100"
+                           placeholder="e.g. PESUG24CS001"
+                           autocomplete="off" aria-describedby="student-list-query-help" required>
+                    <small id="student-list-query-help">USN searches require the full identifier (e.g. PESUG24CS001); name searches can return multiple matches.</small>
+                </div>
+                <div class="form-field">
+                    <button class="btn btn-primary" type="submit">Search Student</button>
+                </div>
+            </form>
+        </div>
+
+        {% if students %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Student ID / USN</th>
+                            <th scope="col">Student Name</th>
+                            <th scope="col">Email Address</th>
+                            <th scope="col">Program</th>
+                            <th scope="col">Semester</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td><strong>{{ student.usn }}</strong></td>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.email }}</td>
+                            <td>{{ student.program }}</td>
+                            <td>{{ student.semester }}</td>
+                            <td>
+                                <a class="btn btn-secondary btn-sm" href="{% url 'student_detail' student.pk %}">View</a>
+                                <a class="btn btn-secondary btn-sm" href="{% url 'student_update' student.pk %}">Edit</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-state">No student records found.</p>
+        {% endif %}
+    </div>
 </section>
 {% endblock %}

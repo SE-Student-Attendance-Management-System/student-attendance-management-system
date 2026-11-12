@@ -1,6 +1,9 @@
 
+import re
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
@@ -37,6 +40,15 @@ class Student(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(99)]
     )
     is_active = models.BooleanField(default=True)
+
+    def clean(self):
+        super().clean()
+        if self.usn:
+            self.usn = self.usn.strip()
+            if not re.match(r"^PESUG24CS[0-9]{3}$", self.usn):
+                raise ValidationError(
+                    {"usn": "Enter a valid USN in the format PESUG24CSXXX (e.g., PESUG24CS001)."}
+                )
 
     def __str__(self):
         return f"{self.usn} - {self.name}"

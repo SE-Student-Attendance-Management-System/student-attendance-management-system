@@ -11,7 +11,7 @@ User = get_user_model()
 class StudentFormTests(TestCase):
     def setUp(self):
         self.valid_data = {
-            "usn": "USN000001",
+            "usn": "PESUG24CS001",
             "name": "Alice Example",
             "email": "alice@example.test",
             "phone": "9876500001",
@@ -28,14 +28,23 @@ class StudentFormTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors.as_json())
 
     def test_usn_must_be_alphanumeric_and_at_most_15_characters(self):
-        for value in ("USN-00001", "USN00000000000001", "USN 01", "ÜSN123"):
+        for value in (
+            "USN-00001",
+            "PESUG24CS0000001",
+            "PESUG24CS 001",
+            "pesug24cs001",
+            "PESUG24CS01",
+            "PESUG24CS00A",
+            "1MS21CS001",
+            "ÜSN123",
+        ):
             with self.subTest(usn=value):
                 form = StudentForm(data={**self.valid_data, "usn": value})
                 self.assertFalse(form.is_valid())
                 self.assertIn("usn", form.errors)
 
     def test_maximum_valid_usn_length_is_accepted(self):
-        form = StudentForm(data={**self.valid_data, "usn": "A12345678901234"})
+        form = StudentForm(data={**self.valid_data, "usn": "PESUG24CS999"})
         self.assertTrue(form.is_valid(), form.errors.as_json())
 
     def test_maximum_valid_lengths_for_other_fields_are_accepted(self):
@@ -78,14 +87,14 @@ class StudentFormTests(TestCase):
 
     def test_duplicate_usn_and_email_are_rejected(self):
         Student.objects.create(
-            usn="USN000001", name="Existing Student", email="existing@example.test",
+            usn="PESUG24CS001", name="Existing Student", email="existing@example.test",
             program="CSE", semester=3,
         )
         form = StudentForm(data=self.valid_data)
         self.assertFalse(form.is_valid())
         self.assertIn("usn", form.errors)
 
-        form = StudentForm(data={**self.valid_data, "usn": "USN000002", "email": "existing@example.test"})
+        form = StudentForm(data={**self.valid_data, "usn": "PESUG24CS002", "email": "existing@example.test"})
         self.assertFalse(form.is_valid())
         self.assertIn("email", form.errors)
 
@@ -103,13 +112,13 @@ class StudentManagementViewTests(TestCase):
         self.faculty = User.objects.create_user(username="student_faculty", password="test-password-123", role=User.Role.FACULTY)
         self.student_user = User.objects.create_user(username="student_user", password="test-password-123", role=User.Role.STUDENT)
         self.student = Student.objects.create(
-            usn="USN100001", name="Existing Student", email="existing@example.test",
+            usn="PESUG24CS101", name="Existing Student", email="existing@example.test",
             program="CSE", semester=3,
         )
 
     def valid_payload(self, **overrides):
         data = {
-            "usn": "USN100002", "name": "New Student", "email": "new@example.test",
+            "usn": "PESUG24CS102", "name": "New Student", "email": "new@example.test",
             "phone": "", "program": "CSE", "semester": 4,
         }
         data.update(overrides)
@@ -119,7 +128,7 @@ class StudentManagementViewTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.post(reverse("student_create"), self.valid_payload())
         self.assertRedirects(response, reverse("student_list"))
-        self.assertTrue(Student.objects.filter(usn="USN100002", name="New Student").exists())
+        self.assertTrue(Student.objects.filter(usn="PESUG24CS102", name="New Student").exists())
 
     def test_admin_can_update_student_record(self):
         self.client.force_login(self.admin)
@@ -137,7 +146,7 @@ class StudentManagementViewTests(TestCase):
 
     def test_invalid_update_does_not_modify_existing_record(self):
         self.student.__class__.objects.create(
-            usn="USN100003",
+            usn="PESUG24CS103",
             name="Other Student",
             email="other@example.test",
             program="CSE",
@@ -147,7 +156,7 @@ class StudentManagementViewTests(TestCase):
         response = self.client.post(
             reverse("student_update", kwargs={"pk": self.student.pk}),
             self.valid_payload(
-                usn="USN100003",
+                usn="PESUG24CS103",
                 email="updated@example.test",
                 name="Must Not Persist",
             ),
@@ -156,7 +165,7 @@ class StudentManagementViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("usn", response.context["form"].errors)
         self.student.refresh_from_db()
-        self.assertEqual(self.student.usn, "USN100001")
+        self.assertEqual(self.student.usn, "PESUG24CS101")
         self.assertEqual(self.student.name, "Existing Student")
         self.assertEqual(self.student.email, "existing@example.test")
 
@@ -177,12 +186,12 @@ class StudentManagementViewTests(TestCase):
                     self.assertEqual(get_response.status_code, 302)
                 else:
                     self.assertEqual(get_response.status_code, 403)
-                post_response = self.client.post(reverse("student_create"), self.valid_payload(usn="USN999999"))
+                post_response = self.client.post(reverse("student_create"), self.valid_payload(usn="PESUG24CS999"))
                 if user is None:
                     self.assertEqual(post_response.status_code, 302)
                 else:
                     self.assertEqual(post_response.status_code, 403)
-                self.assertFalse(Student.objects.filter(usn="USN999999").exists())
+                self.assertFalse(Student.objects.filter(usn="PESUG24CS999").exists())
 
                 update_url = reverse("student_update", kwargs={"pk": self.student.pk})
                 update_get_response = self.client.get(update_url)
