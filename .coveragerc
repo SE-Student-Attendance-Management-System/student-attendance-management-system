@@ -1,0 +1,17 @@
+[run]
+branch = True
+source = attendance
+omit =
+    attendance/migrations/*
+    attendance/tests.py
+    attendance/test_*.py
+    attendance/__init__.py
+
+[report]
+show_missing = True
+precision = 2
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
