@@ -6,7 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Student Attendance Management System (SAMS)">
     <title>{% block title %}SAMS - Student Attendance Management System{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'attendance/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'attendance/css/styles.css' %}?v=1.2">
+    <style>
+        /* Embedded critical navigation fallback */
+        .subnav { background-color: #1e293b; border-bottom: 1px solid #334155; padding: 0 1.5rem; width: 100%; box-sizing: border-box; }
+        .subnav-container { max-width: 1000px; margin: 0 auto; display: flex; gap: 0.5rem; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .subnav-link { color: #cbd5e1; text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 0.75rem 0.95rem; border-bottom: 3px solid transparent; transition: all 0.15s ease; white-space: nowrap; display: inline-flex; align-items: center; }
+        .subnav-link:hover { color: #ffffff; background-color: rgba(255, 255, 255, 0.08); border-bottom-color: #60a5fa; text-decoration: none; }
+        .subnav-link:focus, .subnav-link:focus-visible { outline: 2px solid #60a5fa; outline-offset: -2px; color: #ffffff; }
+        .subnav-link.active { color: #ffffff; font-weight: 600; border-bottom-color: #3b82f6; background-color: rgba(59, 130, 246, 0.15); }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -32,19 +41,19 @@
         {% if user.is_authenticated %}
         <nav class="subnav" aria-label="Role Navigation">
             <div class="subnav-container">
-                <a href="{% url 'home' %}" class="subnav-link">Dashboard</a>
+                <a href="{% url 'home' %}" class="subnav-link{% if request.path == '/' %} active{% endif %}">Dashboard</a>
                 {% if user.role == "ADMIN" %}
-                    <a href="{% url 'course_list' %}" class="subnav-link">Courses &amp; Sections</a>
-                    <a href="{% url 'student_list' %}" class="subnav-link">Students</a>
-                    <a href="{% url 'student_search' %}" class="subnav-link">Search Students</a>
-                    <a href="{% url 'attendance_sessions' %}" class="subnav-link">Attendance</a>
-                    <a href="{% url 'attendance_report' %}" class="subnav-link">Reports</a>
+                    <a href="{% url 'course_list' %}" class="subnav-link{% if '/courses/' in request.path %} active{% endif %}">Courses &amp; Sections</a>
+                    <a href="{% url 'student_list' %}" class="subnav-link{% if '/students/' in request.path and '/search/' not in request.path %} active{% endif %}">Students</a>
+                    <a href="{% url 'student_search' %}" class="subnav-link{% if '/students/search/' in request.path %} active{% endif %}">Search Students</a>
+                    <a href="{% url 'attendance_sessions' %}" class="subnav-link{% if '/attendance/' in request.path %} active{% endif %}">Attendance</a>
+                    <a href="{% url 'attendance_report' %}" class="subnav-link{% if '/reports/' in request.path %} active{% endif %}">Reports</a>
                 {% elif user.role == "FACULTY" %}
-                    <a href="{% url 'attendance_sessions' %}" class="subnav-link">Attendance Sessions</a>
-                    <a href="{% url 'student_search' %}" class="subnav-link">Search Students</a>
-                    <a href="{% url 'attendance_report' %}" class="subnav-link">Reports</a>
+                    <a href="{% url 'attendance_sessions' %}" class="subnav-link{% if '/attendance/' in request.path %} active{% endif %}">Attendance Sessions</a>
+                    <a href="{% url 'student_search' %}" class="subnav-link{% if '/students/search/' in request.path %} active{% endif %}">Search Students</a>
+                    <a href="{% url 'attendance_report' %}" class="subnav-link{% if '/reports/' in request.path %} active{% endif %}">Reports</a>
                 {% elif user.role == "STUDENT" %}
-                    <a href="{% url 'student_attendance_history' %}" class="subnav-link">My Attendance History</a>
+                    <a href="{% url 'student_attendance_history' %}" class="subnav-link{% if '/student/attendance-history/' in request.path %} active{% endif %}">My Attendance History</a>
                 {% endif %}
             </div>
         </nav>

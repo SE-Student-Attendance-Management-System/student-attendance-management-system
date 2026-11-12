@@ -12,7 +12,7 @@
     {% if is_admin %}
     <div class="info-banner" style="border-left-color: #2563eb;">
         <h3>Administrator Dashboard</h3>
-        <p>You have system-level management privileges under <strong>Issue #12 (Role-Based Authorization)</strong> and <strong>BR-02</strong>.</p>
+        <p>You have system-level management privileges to configure courses, class sections, student profiles, faculty assignments, and attendance records.</p>
 
         <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1.25rem 0;">
             <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
@@ -59,7 +59,7 @@
     {% elif is_faculty %}
     <div class="info-banner" style="border-left-color: #059669;">
         <h3>Faculty Dashboard</h3>
-        <p>You have access to mark and modify attendance for your assigned classes under <strong>BR-03</strong> and <strong>BR-05</strong>.</p>
+        <p>You have access to mark and modify attendance for your assigned courses and class sections.</p>
 
         <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin: 1.25rem 0;">
             <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
@@ -124,7 +124,7 @@
     {% elif is_student %}
     <div class="info-banner" style="border-left-color: #d97706;">
         <h3>Student Dashboard</h3>
-        <p>You have read-only access to your personal attendance records and attendance history under <strong>BR-04</strong>.</p>
+        <p>You have read-only access to your personal attendance records and attendance history across enrolled courses.</p>
 
         <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 200px)); gap: 0.75rem; margin: 1.25rem 0;">
             <div class="metric-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; text-align: center;">
